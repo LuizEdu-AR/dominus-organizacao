@@ -1,0 +1,87 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function myProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function approved() {
+      return signedIn()
+        && myProfile().status == "active"
+        && myProfile().role != "pending";
+    }
+
+    function leader() {
+      return approved() && myProfile().role == "leader";
+    }
+
+    function manager() {
+      return approved() && myProfile().role in [
+        "manager_general",
+        "manager_actions",
+        "manager_partnerships",
+        "manager_finance"
+      ];
+    }
+
+    function management() {
+      return leader() || manager();
+    }
+
+    match /users/{uid} {
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.uid == uid
+        && request.resource.data.role == "pending"
+        && request.resource.data.status == "pending";
+
+      allow read: if signedIn()
+        && (request.auth.uid == uid || approved());
+
+      allow update: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["name"]);
+
+      allow delete: if false;
+    }
+
+    match /products/{productId} {
+      allow read: if approved();
+      allow create, update, delete: if leader();
+    }
+
+    match /settings/{settingId} {
+      allow read: if approved();
+      allow create, update, delete: if leader();
+    }
+
+    match /sales/{saleId} {
+      allow read: if approved();
+      allow create: if approved()
+        && request.resource.data.sellerUid == request.auth.uid;
+      allow delete: if management();
+      allow update: if false;
+    }
+
+    match /farms/{farmId} {
+      allow read: if approved();
+      allow create: if approved()
+        && request.resource.data.memberUid == request.auth.uid;
+      allow delete: if management();
+      allow update: if false;
+    }
+
+    match /notices/{noticeId} {
+      allow read: if approved();
+      allow create: if management()
+        && request.resource.data.authorUid == request.auth.uid;
+      allow update, delete: if management();
+    }
+  }
+}
