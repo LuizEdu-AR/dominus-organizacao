@@ -235,3 +235,9 @@ tbody tr:hover { background: rgba(255,255,255,.018); }
   .percentage-input { width: 100%; }
   .percentage-input input { flex: 1; width: auto; }
 }
+
+/* Botões assíncronos: bloqueio de clique duplo + indicador de carregamento */
+.button-spinner { animation: button-spin .8s linear infinite; flex: 0 0 auto; }
+.btn.is-loading, .icon-button.is-loading { cursor: wait; opacity: .78; }
+.btn:disabled, .icon-button:disabled { cursor: not-allowed; }
+@keyframes button-spin { to { transform: rotate(360deg); } }

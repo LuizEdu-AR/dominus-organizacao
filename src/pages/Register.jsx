@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { registerUser } from '../services/authService'
 import { useToast } from '../components/toasts/ToastProvider'
+import LoadingButton from '../components/ui/LoadingButton'
 
 export default function Register() {
   const [form, setForm] = useState({ id: '', name: '', password: '', confirm: '' })
@@ -39,7 +40,7 @@ export default function Register() {
           <label>Nome<input value={form.name} onChange={e => setForm({ ...form, name: e.target.value.replace(/[0-9]/g, '') })} required /></label>
           <label>Senha<input type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required /></label>
           <label>Confirmar senha<input type="password" value={form.confirm} onChange={e => setForm({ ...form, confirm: e.target.value })} required /></label>
-          <button className="btn primary full" disabled={loading}>{loading ? 'Criando...' : 'Criar conta'}</button>
+          <LoadingButton className="btn primary full" loading={loading} loadingText="Criando...">Criar conta</LoadingButton>
         </form>
 
         <div className="auth-footer">Já possui conta? <Link to="/login">Entrar</Link></div>

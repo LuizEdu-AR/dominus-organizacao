@@ -6,21 +6,28 @@ import { addRecord, getOrderedCollection, removeRecord } from '../services/dataS
 import { dateTime } from '../utils/formatters'
 import { isManagement } from '../utils/permissions'
 import { useToast } from '../components/toasts/ToastProvider'
+import LoadingButton from '../components/ui/LoadingButton'
 
 export default function Notices() {
   const { profile } = useAuth()
   const { notify } = useToast()
   const [notices, setNotices] = useState([])
   const [form, setForm] = useState({ title: '', text: '' })
+  const [publishing, setPublishing] = useState(false)
   const load = async () => setNotices(await getOrderedCollection('notices'))
   useEffect(() => { load() }, [])
 
   async function add() {
+    if (publishing) return
     if (!form.title || !form.text) return notify('Preencha título e aviso.', 'error')
-    await addRecord('notices', { ...form, authorName: profile.name, authorUid: profile.uid })
+    setPublishing(true)
+    try {
+      await addRecord('notices', { ...form, authorName: profile.name, authorUid: profile.uid })
     setForm({ title: '', text: '' })
     notify('Aviso publicado.')
-    load()
+      load()
+    } catch (e) { notify(e.message, 'error') }
+    finally { setPublishing(false) }
   }
 
   return (
@@ -32,7 +39,7 @@ export default function Notices() {
           <div className="form-stack">
             <label>Título<input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></label>
             <label>Mensagem<textarea rows="4" value={form.text} onChange={e => setForm({ ...form, text: e.target.value })} /></label>
-            <button className="btn primary" onClick={add}><Plus size={16} /> Publicar aviso</button>
+            <LoadingButton className="btn primary" onClick={add} loading={publishing} loadingText="Publicando..."><Plus size={16} /> Publicar aviso</LoadingButton>
           </div>
         </div>
       )}

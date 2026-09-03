@@ -6,6 +6,7 @@ import { addRecord, getCollection, getRecord } from '../services/dataService'
 import { sendDiscordEvent } from '../services/discordService'
 import { money } from '../utils/formatters'
 import { useToast } from '../components/toasts/ToastProvider'
+import LoadingButton from '../components/ui/LoadingButton'
 
 const isCard = (product) => (product.category || '').toLowerCase().includes('cart')
 
@@ -16,6 +17,7 @@ export default function RegisterSale() {
   const [quantities, setQuantities] = useState({})
   const [saleType, setSaleType] = useState('PISTA')
   const [factionFeePercentage, setFactionFeePercentage] = useState(0)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -66,6 +68,7 @@ export default function RegisterSale() {
   }
 
   async function finalize() {
+    if (submitting) return
     if (!items.length) return notify('Adicione pelo menos um item.', 'error')
 
     const sale = {
@@ -81,6 +84,7 @@ export default function RegisterSale() {
       total,
     }
 
+    setSubmitting(true)
     try {
       const ref = await addRecord('sales', sale)
       await sendDiscordEvent('sale', { ...sale, saleId: ref.id })
@@ -88,6 +92,8 @@ export default function RegisterSale() {
       notify('Venda finalizada e enviada ao Discord.')
     } catch (error) {
       notify(error.message, 'error')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -175,7 +181,7 @@ export default function RegisterSale() {
           <div className="summary-row"><span>Descontos</span><strong>- {money(discount)}</strong></div>
           <div className="summary-row"><span>Taxa da facção ({factionFeePercentage}%)</span><strong>{money(factionFee)}</strong></div>
           <div className="summary-row total"><span>Total</span><strong>{money(total)}</strong></div>
-          <button className="btn primary full" onClick={finalize}>Finalizar venda</button>
+          <LoadingButton className="btn primary full" onClick={finalize} loading={submitting} loadingText="Finalizando...">Finalizar venda</LoadingButton>
         </aside>
       </div>
     </>

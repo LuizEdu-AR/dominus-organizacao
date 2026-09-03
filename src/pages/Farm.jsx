@@ -6,25 +6,30 @@ import { FARM_ITEMS } from '../data/farmItems'
 import { addRecord } from '../services/dataService'
 import { sendDiscordEvent } from '../services/discordService'
 import { useToast } from '../components/toasts/ToastProvider'
+import LoadingButton from '../components/ui/LoadingButton'
 
 export default function Farm() {
   const { profile } = useAuth()
   const { notify } = useToast()
   const [quantities, setQuantities] = useState({})
+  const [submitting, setSubmitting] = useState(false)
 
   const change = (name, delta) => setQuantities(q => ({ ...q, [name]: Math.max(0, Number(q[name] || 0) + delta) }))
 
   async function submit() {
+    if (submitting) return
     const items = Object.entries(quantities).filter(([, qty]) => qty > 0).map(([name, qty]) => ({ name, qty }))
     if (!items.length) return notify('Informe pelo menos um item.', 'error')
 
     const record = { memberUid: profile.uid, memberName: profile.name, memberId: profile.id, items }
+    setSubmitting(true)
     try {
       const ref = await addRecord('farms', record)
       await sendDiscordEvent('farm', { ...record, farmId: ref.id })
       setQuantities({})
       notify('Farm registrado e enviado ao Discord.')
     } catch (e) { notify(e.message, 'error') }
+    finally { setSubmitting(false) }
   }
 
   return (
@@ -43,7 +48,7 @@ export default function Farm() {
           </div>
         ))}
       </div>
-      <div className="farm-actions"><button className="btn primary" onClick={submit}>Confirmar depósito</button></div>
+      <div className="farm-actions"><LoadingButton className="btn primary" onClick={submit} loading={submitting} loadingText="Registrando...">Confirmar depósito</LoadingButton></div>
     </>
   )
 }

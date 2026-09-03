@@ -8,6 +8,7 @@ import { approveUser, changeUserRole, dismissUser } from '../services/userAdminS
 import { sendDiscordEvent } from '../services/discordService'
 import { isLeader, isManagement, ROLE_LABELS } from '../utils/permissions'
 import { useToast } from '../components/toasts/ToastProvider'
+import LoadingButton from '../components/ui/LoadingButton'
 
 const roleOptions = [
   ['member', 'Membro'],
@@ -23,30 +24,43 @@ export default function Hierarchy() {
   const { notify } = useToast()
   const [users, setUsers] = useState([])
   const [confirm, setConfirm] = useState(null)
+  const [busyAction, setBusyAction] = useState(null)
 
   const load = async () => setUsers(await getCollection('users'))
   useEffect(() => { load() }, [])
 
   async function approve(uid) {
-    try { await approveUser(uid); notify('Acesso liberado.'); load() }
+    if (busyAction) return
+    setBusyAction(`approve:${uid}`)
+    try { await approveUser(uid); notify('Acesso liberado.'); await load() }
     catch (e) { notify(e.message, 'error') }
+    finally { setBusyAction(null) }
   }
 
   async function role(uid, nextRole) {
-    try { await changeUserRole(uid, nextRole); notify('Cargo atualizado.'); load() }
+    if (busyAction) return
+    setBusyAction(`role:${uid}`)
+    try { await changeUserRole(uid, nextRole); notify('Cargo atualizado.'); await load() }
     catch (e) { notify(e.message, 'error') }
+    finally { setBusyAction(null) }
   }
 
   async function dismiss() {
-    try { await dismissUser(confirm.uid); notify('Usuário demitido e conta excluída.'); setConfirm(null); load() }
+    if (!confirm || busyAction) return
+    setBusyAction(`dismiss:${confirm.uid}`)
+    try { await dismissUser(confirm.uid); notify('Usuário demitido e conta excluída.'); setConfirm(null); await load() }
     catch (e) { notify(e.message, 'error') }
+    finally { setBusyAction(null) }
   }
 
   async function sendHierarchy() {
+    if (busyAction) return
+    setBusyAction('hierarchy')
     try {
       await sendDiscordEvent('hierarchy', { users: users.filter(u => u.status === 'active').map(({ name, id, role }) => ({ name, id, role })) })
       notify('Hierarquia enviada ao Discord.')
     } catch (e) { notify(e.message, 'error') }
+    finally { setBusyAction(null) }
   }
 
   const order = ['leader', 'manager_general', 'manager_actions', 'manager_partnerships', 'manager_finance', 'member', 'pending']
@@ -58,7 +72,7 @@ export default function Hierarchy() {
         eyebrow="ORGANIZAÇÃO"
         title="Hierarquia"
         description="Gerencie acessos e acompanhe a estrutura atual da Dominus."
-        actions={isLeader(profile?.role) && <button className="btn primary" onClick={sendHierarchy}><Send size={16} /> Enviar ao Discord</button>}
+        actions={isLeader(profile?.role) && <LoadingButton className="btn primary" onClick={sendHierarchy} loading={busyAction === 'hierarchy'} disabled={Boolean(busyAction)} loadingText="Enviando..."><Send size={16} /> Enviar ao Discord</LoadingButton>}
       />
 
       <div className="panel">
@@ -81,7 +95,7 @@ export default function Hierarchy() {
                   <td>
                     <div className="row-actions">
                       {user.status === 'pending' && isManagement(profile?.role) && (
-                        <button className="btn small" onClick={() => approve(user.uid)}>Liberar acesso</button>
+                        <LoadingButton className="btn small" onClick={() => approve(user.uid)} loading={busyAction === `approve:${user.uid}`} disabled={Boolean(busyAction)} loadingText="Liberando...">Liberar acesso</LoadingButton>
                       )}
                       {user.uid !== profile?.uid &&
                         isManagement(profile?.role) &&
@@ -109,8 +123,9 @@ export default function Hierarchy() {
         description={confirm ? `A conta de ${confirm.name} será removida do Firebase Auth e do Firestore.` : ''}
         confirmLabel="Demitir"
         danger
-        onCancel={() => setConfirm(null)}
+        onCancel={() => !busyAction && setConfirm(null)}
         onConfirm={dismiss}
+        loading={Boolean(confirm && busyAction === `dismiss:${confirm.uid}`)}
       />
     </>
   )

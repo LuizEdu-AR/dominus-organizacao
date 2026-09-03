@@ -7,12 +7,14 @@ import { INITIAL_PRODUCTS } from '../data/initialProducts'
 import { isLeader } from '../utils/permissions'
 import { money } from '../utils/formatters'
 import { useToast } from '../components/toasts/ToastProvider'
+import LoadingButton from '../components/ui/LoadingButton'
 
 export default function Prices() {
   const { profile } = useAuth()
   const { notify } = useToast()
   const [products, setProducts] = useState([])
   const [factionFeePercentage, setFactionFeePercentage] = useState(0)
+  const [busyAction, setBusyAction] = useState(null)
   const [draft, setDraft] = useState({
     name: '',
     category: 'Equipamentos',
@@ -38,6 +40,8 @@ export default function Prices() {
   }, {}), [products])
 
   async function seed() {
+    if (busyAction) return
+    setBusyAction('seed')
     try {
       for (let i = 0; i < INITIAL_PRODUCTS.length; i++) {
         await setRecord('products', `initial-${i + 1}`, INITIAL_PRODUCTS[i])
@@ -47,24 +51,28 @@ export default function Prices() {
       load()
     } catch (error) {
       notify(error.message, 'error')
-    }
+    } finally { setBusyAction(null) }
   }
 
   async function saveFactionFee() {
+    if (busyAction) return
     const percentage = Number(factionFeePercentage)
     if (!Number.isFinite(percentage) || percentage < 0 || percentage > 100) {
       return notify('Informe uma taxa entre 0% e 100%.', 'error')
     }
 
+    setBusyAction('fee')
     try {
       await setRecord('settings', 'general', { factionFeePercentage: percentage })
       notify('Taxa da facção atualizada.')
     } catch (error) {
       notify(error.message, 'error')
-    }
+    } finally { setBusyAction(null) }
   }
 
   async function save(product) {
+    if (busyAction) return
+    setBusyAction(`save:${product.id}`)
     try {
       await setRecord('products', product.id, {
         name: product.name.trim(),
@@ -77,12 +85,14 @@ export default function Prices() {
       load()
     } catch (error) {
       notify(error.message, 'error')
-    }
+    } finally { setBusyAction(null) }
   }
 
   async function add() {
+    if (busyAction) return
     if (!draft.name || !draft.price) return notify('Informe nome e preço.', 'error')
 
+    setBusyAction('add')
     try {
       await addRecord('products', {
         ...draft,
@@ -94,7 +104,7 @@ export default function Prices() {
       load()
     } catch (error) {
       notify(error.message, 'error')
-    }
+    } finally { setBusyAction(null) }
   }
 
   function patchLocal(id, field, value) {
@@ -112,7 +122,7 @@ export default function Prices() {
       {isLeader(profile?.role) && products.length === 0 && (
         <div className="notice-banner">
           <span>Nenhum produto cadastrado no Firebase.</span>
-          <button className="btn primary" onClick={seed}>Carregar valores iniciais</button>
+          <LoadingButton className="btn primary" onClick={seed} loading={busyAction === 'seed'} disabled={Boolean(busyAction)} loadingText="Carregando...">Carregar valores iniciais</LoadingButton>
         </div>
       )}
 
@@ -135,7 +145,7 @@ export default function Prices() {
               />
               <span>%</span>
             </div>
-            <button className="btn primary" onClick={saveFactionFee}><Save size={16} /> Salvar taxa</button>
+            <LoadingButton className="btn primary" onClick={saveFactionFee} loading={busyAction === 'fee'} disabled={Boolean(busyAction)} loadingText="Salvando..."><Save size={16} /> Salvar taxa</LoadingButton>
           </div>
         ) : (
           <strong className="fee-readonly">{factionFeePercentage}%</strong>
@@ -151,7 +161,7 @@ export default function Prices() {
             <label>Preço<input type="number" value={draft.price} onChange={event => setDraft({ ...draft, price: event.target.value })} /></label>
             <label className="check-label"><input type="checkbox" checked={draft.partnershipEnabled} onChange={event => setDraft({ ...draft, partnershipEnabled: event.target.checked })} /> Desconto de parceria</label>
             {draft.partnershipEnabled && <label>Preço parceria<input type="number" value={draft.partnershipPrice} onChange={event => setDraft({ ...draft, partnershipPrice: event.target.value })} /></label>}
-            <button className="btn primary" onClick={add}><Plus size={16} /> Adicionar</button>
+            <LoadingButton className="btn primary" onClick={add} loading={busyAction === 'add'} disabled={Boolean(busyAction)} loadingText="Adicionando..."><Plus size={16} /> Adicionar</LoadingButton>
           </div>
         </div>
       )}
@@ -176,7 +186,7 @@ export default function Prices() {
                     {isLeader(profile?.role) && (
                       <td>
                         <div className="row-actions">
-                          <button className="icon-button" onClick={() => save(product)}><Save size={17} /></button>
+                          <LoadingButton className="icon-button" onClick={() => save(product)} loading={busyAction === `save:${product.id}`} disabled={Boolean(busyAction)} loadingText=""><Save size={17} /></LoadingButton>
                           <button className="icon-button danger-text" onClick={async () => { await removeRecord('products', product.id); load() }}><Trash2 size={17} /></button>
                         </div>
                       </td>
