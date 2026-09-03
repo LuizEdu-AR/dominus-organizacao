@@ -14,7 +14,6 @@ export default function RegisterSale() {
   const { notify } = useToast()
   const [products, setProducts] = useState([])
   const [quantities, setQuantities] = useState({})
-  const [customPrices, setCustomPrices] = useState({})
   const [saleType, setSaleType] = useState('PISTA')
   const [factionFeePercentage, setFactionFeePercentage] = useState(0)
 
@@ -33,8 +32,7 @@ export default function RegisterSale() {
   const items = useMemo(() => products
     .filter(p => Number(quantities[p.id] || 0) > 0)
     .map(p => {
-      const manualPrice = customPrices[p.id]
-      const normalPrice = Number(manualPrice === '' || manualPrice == null ? p.price : manualPrice)
+      const normalPrice = Number(p.price)
       const partnershipPrice = Number(p.partnershipPrice ?? p.price)
       const unitPrice = saleType === 'PARCERIA' && p.partnershipEnabled
         ? partnershipPrice
@@ -50,7 +48,7 @@ export default function RegisterSale() {
         discount: Math.max(0, (normalPrice - unitPrice) * qty),
         subtotal: unitPrice * qty,
       }
-    }), [products, quantities, customPrices, saleType])
+    }), [products, quantities, saleType])
 
   const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0)
   const discount = items.reduce((sum, item) => sum + item.discount, 0)
@@ -87,7 +85,6 @@ export default function RegisterSale() {
       const ref = await addRecord('sales', sale)
       await sendDiscordEvent('sale', { ...sale, saleId: ref.id })
       setQuantities({})
-      setCustomPrices({})
       notify('Venda finalizada e enviada ao Discord.')
     } catch (error) {
       notify(error.message, 'error')
@@ -118,22 +115,6 @@ export default function RegisterSale() {
                     <small>Parceria: desconto de {money(Number(product.price) - Number(product.partnershipPrice))} por unidade</small>
                   )}
                 </div>
-
-                <label className="sale-manual-price">
-                  <span>Preço manual</span>
-                  <input
-                    type="number"
-                    min="0"
-                    value={customPrices[product.id] ?? ''}
-                    placeholder={String(product.price)}
-                    onChange={event => setCustomPrices(current => ({
-                      ...current,
-                      [product.id]: event.target.value,
-                    }))}
-                    disabled={partnershipActive}
-                    title={partnershipActive ? 'Na parceria é usado o preço de parceria definido pelo Líder.' : 'Alterar preço desta venda.'}
-                  />
-                </label>
 
                 <div className="qty-control sale-qty-control">
                   <button onClick={() => changeQty(product.id, -1)}><Minus size={15} /></button>
