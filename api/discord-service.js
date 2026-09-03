@@ -75,17 +75,40 @@ export default async function handler(req, res) {
       })
     } else if (type === 'hierarchy') {
       if (caller.role !== 'leader') return res.status(403).json({ error: 'Apenas líderes podem enviar a hierarquia.' })
+
       const users = payload.users || []
-      const order = ['leader', 'manager_general', 'manager_actions', 'manager_partnerships', 'manager_finance', 'member']
-      const sorted = [...users].sort((a, b) => order.indexOf(a.role) - order.indexOf(b.role))
-      const lines = sorted.map(u => `**${ROLE_LABELS[u.role] || u.role}** — ${u.name} • ID ${u.id}`).join('\n')
+      const roleGroups = [
+        { role: 'leader', title: '👑 LÍDERES' },
+        { role: 'manager_general', title: '💼 GERÊNCIA GERAL' },
+        { role: 'manager_actions', title: '🎯 GERÊNCIA DE AÇÕES' },
+        { role: 'manager_partnerships', title: '🤝 GERÊNCIA DE PARCERIAS' },
+        { role: 'manager_finance', title: '💰 GERÊNCIA FINANCEIRA' },
+        { role: 'member', title: '👥 MEMBROS' },
+      ]
+
+      const fields = roleGroups
+        .map(group => {
+          const members = users.filter(user => user.role === group.role)
+          if (!members.length) return null
+
+          return {
+            name: group.title,
+            value: members
+              .map(user => `${user.name} • ID ${user.id}`)
+              .join('\n'),
+            inline: false,
+          }
+        })
+        .filter(Boolean)
+
       await send(process.env.DISCORD_HIERARCHY_WEBHOOK, {
         username: 'Dominus • Hierarquia',
         avatar_url: icon,
         embeds: [{
           color: 0xD4AF37,
           author: { name: 'DOMINUS • HIERARQUIA ATUALIZADA', icon_url: icon },
-          description: lines || 'Nenhum membro ativo.',
+          description: fields.length ? undefined : 'Nenhum membro ativo.',
+          fields,
           thumbnail: { url: icon },
           timestamp: new Date().toISOString(),
         }],
