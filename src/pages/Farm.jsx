@@ -2,11 +2,27 @@ import { useState } from 'react'
 import { Minus, Plus } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 import { useAuth } from '../context/AuthContext'
-import { FARM_ITEMS } from '../data/farmItems'
 import { addRecord } from '../services/dataService'
 import { sendDiscordEvent } from '../services/discordService'
 import { useToast } from '../components/toasts/ToastProvider'
 import LoadingButton from '../components/ui/LoadingButton'
+
+const FARM_ITEMS = [
+  'Pano',
+  'Chip',
+  'Ferro de Solda',
+  'Aço',
+  'Plástico Processado',
+  'Materiais Reciclados',
+  'Cabo',
+  'Cinta',
+  'Borracha Processada',
+  'Fibra de Carbono',
+  'Transponder',
+  'Alumínio Chapado',
+  'Módulo ECU',
+  'Cobre Escovado',
+]
 
 export default function Farm() {
   const { profile } = useAuth()
@@ -44,11 +60,11 @@ export default function Farm() {
 
   return (
     <>
-      <PageHeader eyebrow="BAÚ" title="Farm" description="Informe os itens depositados. Os nomes abaixo são provisórios até a lista oficial ser confirmada." />
+      <PageHeader eyebrow="BAÚ" title="Farm" description="Informe os itens depositados no baú da organização." />
       <div className="farm-grid">
-        {FARM_ITEMS.map(name => (
+        {FARM_ITEMS.map((name, index) => (
           <div className="farm-card" key={name}>
-            <div className="farm-icon">{name.slice(-2)}</div>
+            <div className="farm-icon">{String(index + 1).padStart(2, '0')}</div>
             <strong>{name}</strong>
             <div className="qty-control">
               <button type="button" onClick={() => change(name, -1)}><Minus size={15} /></button>

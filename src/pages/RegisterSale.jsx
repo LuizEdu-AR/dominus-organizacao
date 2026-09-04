@@ -67,6 +67,16 @@ export default function RegisterSale() {
     }))
   }
 
+  function setQuantity(id, value) {
+    if (value === '') {
+      setQuantities(current => ({ ...current, [id]: '' }))
+      return
+    }
+
+    const quantity = Math.max(0, Math.floor(Number(value) || 0))
+    setQuantities(current => ({ ...current, [id]: quantity }))
+  }
+
   async function finalize() {
     if (submitting) return
     if (!items.length) return notify('Adicione pelo menos um item.', 'error')
@@ -123,9 +133,20 @@ export default function RegisterSale() {
                 </div>
 
                 <div className="qty-control sale-qty-control">
-                  <button onClick={() => changeQty(product.id, -1)}><Minus size={15} /></button>
-                  <span>{quantities[product.id] || 0}</span>
-                  <button onClick={() => changeQty(product.id, 1)}><Plus size={15} /></button>
+                  <button type="button" onClick={() => changeQty(product.id, -1)}><Minus size={15} /></button>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputMode="numeric"
+                    value={quantities[product.id] ?? 0}
+                    onChange={event => setQuantity(product.id, event.target.value)}
+                    onBlur={() => {
+                      if (quantities[product.id] === '') setQuantity(product.id, 0)
+                    }}
+                    aria-label={`Quantidade de ${product.name}`}
+                  />
+                  <button type="button" onClick={() => changeQty(product.id, 1)}><Plus size={15} /></button>
                 </div>
               </div>
             )
