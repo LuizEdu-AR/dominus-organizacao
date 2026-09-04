@@ -54,7 +54,10 @@ export default function RegisterSale() {
 
   const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0)
   const discount = items.reduce((sum, item) => sum + item.discount, 0)
-  const factionFee = subtotal * (factionFeePercentage / 100)
+  const factionFeeThreshold = 50000
+  const factionFeeEligible = subtotal > factionFeeThreshold
+  const appliedFactionFeePercentage = factionFeeEligible ? factionFeePercentage : 0
+  const factionFee = subtotal * (appliedFactionFeePercentage / 100)
   const total = subtotal + factionFee
 
   const technologyAndEquipment = products.filter(product => !isCard(product))
@@ -89,7 +92,8 @@ export default function RegisterSale() {
       items,
       subtotal,
       discount,
-      factionFeePercentage,
+      factionFeePercentage: appliedFactionFeePercentage,
+      factionFeeThreshold,
       factionFee,
       total,
     }
@@ -200,7 +204,13 @@ export default function RegisterSale() {
 
           <div className="summary-row"><span>Subtotal</span><strong>{money(subtotal)}</strong></div>
           <div className="summary-row"><span>Descontos</span><strong>- {money(discount)}</strong></div>
-          <div className="summary-row"><span>Taxa da facção ({factionFeePercentage}%)</span><strong>{money(factionFee)}</strong></div>
+          <div className="summary-row">
+            <span>
+              Taxa da facção ({factionFeePercentage}%)
+              {!factionFeeEligible && <small className="muted"> — aplicada somente acima de {money(factionFeeThreshold)}</small>}
+            </span>
+            <strong>{money(factionFee)}</strong>
+          </div>
           <div className="summary-row total"><span>Total</span><strong>{money(total)}</strong></div>
           <LoadingButton className="btn primary full" onClick={finalize} loading={submitting} loadingText="Finalizando...">Finalizar venda</LoadingButton>
         </aside>
