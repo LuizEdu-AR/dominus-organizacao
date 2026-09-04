@@ -99,13 +99,13 @@ export default async function handler(req, res) {
       })
     } else if (type === 'action') {
       const fields = [
-        { name: '⚔️ Ação', value: payload.action || '-', inline: false },
-        { name: '📅 Data', value: payload.date || '-', inline: true },
-        { name: '🕒 Hora', value: payload.time || '-', inline: true },
-        { name: '🏆 Resultado', value: payload.result || '-', inline: false },
-        { name: '📝 Resumo', value: payload.summary || 'Opcional', inline: false },
-        { name: '🎯 Motivo', value: payload.reason || 'Ação', inline: true },
-        { name: '👥 Participantes', value: payload.participants || '-', inline: false },
+        { name: ' Ação', value: payload.action || '-', inline: false },
+        { name: ' Data', value: payload.date || '-', inline: true },
+        { name: ' Hora', value: payload.time || '-', inline: true },
+        { name: ' Resultado', value: payload.result || '-', inline: false },
+        { name: ' Resumo', value: payload.summary || 'Opcional', inline: false },
+        { name: ' Motivo', value: payload.reason || 'Ação', inline: true },
+        { name: ' Participantes', value: payload.participants || '-', inline: false },
       ]
 
       if (payload.mediaLink) {
@@ -135,12 +135,12 @@ export default async function handler(req, res) {
 
       const users = payload.users || []
       const roleGroups = [
-        { role: 'leader', title: '👑 LÍDERES' },
-        { role: 'manager_general', title: '💼 GERÊNCIA GERAL' },
-        { role: 'manager_actions', title: '🎯 GERÊNCIA DE AÇÕES' },
-        { role: 'manager_partnerships', title: '🤝 GERÊNCIA DE PARCERIAS' },
-        { role: 'manager_finance', title: '💰 GERÊNCIA FINANCEIRA' },
-        { role: 'member', title: '👥 MEMBROS' },
+        { role: 'leader', title: ' LÍDERES' },
+        { role: 'manager_general', title: ' GERÊNCIA GERAL' },
+        { role: 'manager_actions', title: ' GERÊNCIA DE AÇÕES' },
+        { role: 'manager_partnerships', title: ' GERÊNCIA DE PARCERIAS' },
+        { role: 'manager_finance', title: ' GERÊNCIA FINANCEIRA' },
+        { role: 'member', title: ' MEMBROS' },
       ]
 
       const fields = roleGroups
