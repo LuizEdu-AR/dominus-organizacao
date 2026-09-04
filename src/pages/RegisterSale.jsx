@@ -58,7 +58,7 @@ export default function RegisterSale() {
   const factionFeeEligible = subtotal > factionFeeThreshold
   const appliedFactionFeePercentage = factionFeeEligible ? factionFeePercentage : 0
   const factionFee = subtotal * (appliedFactionFeePercentage / 100)
-  const total = subtotal + factionFee
+  const total = subtotal
 
   const technologyAndEquipment = products.filter(product => !isCard(product))
   const cards = products.filter(isCard)
@@ -206,8 +206,8 @@ export default function RegisterSale() {
           <div className="summary-row"><span>Descontos</span><strong>- {money(discount)}</strong></div>
           <div className="summary-row">
             <span>
-              Taxa da facção ({factionFeePercentage}%)
-              {!factionFeeEligible && <small className="muted"> — aplicada somente acima de {money(factionFeeThreshold)}</small>}
+              Depósito para facção ({factionFeePercentage}%)
+              {!factionFeeEligible && <small className="muted"> — devido somente acima de {money(factionFeeThreshold)}</small>}
             </span>
             <strong>{money(factionFee)}</strong>
           </div>
