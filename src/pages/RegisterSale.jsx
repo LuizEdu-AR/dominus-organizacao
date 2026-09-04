@@ -211,7 +211,7 @@ export default function RegisterSale() {
             </span>
             <strong>{money(factionFee)}</strong>
           </div>
-          <div className="summary-row total"><span>Total</span><strong>{money(total)}</strong></div>
+          <div className="summary-row total"><span>Valor a ser cobrado</span><strong>{money(total)}</strong></div>
           <LoadingButton className="btn primary full" onClick={finalize} loading={submitting} loadingText="Finalizando...">Finalizar venda</LoadingButton>
         </aside>
       </div>
