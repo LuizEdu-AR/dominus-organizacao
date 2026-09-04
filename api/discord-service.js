@@ -29,6 +29,26 @@ async function send(webhook, body) {
   if (!response.ok) throw new Error(`Discord respondeu ${response.status}.`)
 }
 
+
+async function sendToBoth(primaryWebhook, secondaryWebhook, body) {
+  const webhooks = [primaryWebhook, secondaryWebhook].filter(Boolean)
+  if (!webhooks.length) throw new Error('Webhook não configurado.')
+
+  const results = await Promise.allSettled(webhooks.map(webhook => send(webhook, body)))
+  const successes = results.filter(result => result.status === 'fulfilled').length
+
+  if (!successes) {
+    const firstError = results.find(result => result.status === 'rejected')
+    throw firstError?.reason || new Error('Falha ao enviar para o Discord.')
+  }
+
+  results.forEach((result, index) => {
+    if (result.status === 'rejected') {
+      console.error(`Falha no webhook Discord ${index + 1}:`, result.reason)
+    }
+  })
+}
+
 async function sendWithAttachment(webhook, body, attachment) {
   if (!attachment?.dataUrl) return send(webhook, body)
   if (!webhook) throw new Error('Webhook não configurado.')
@@ -59,7 +79,7 @@ export default async function handler(req, res) {
 
     if (type === 'sale') {
       const lines = payload.items?.map(i => `• ${i.qty}x **${i.name}** — ${money(i.subtotal)}`).join('\n') || '-'
-      await send(process.env.DISCORD_SALES_WEBHOOK, {
+      await sendToBoth(process.env.DISCORD_SALES_WEBHOOK, process.env.DISCORD_SALES_WEBHOOK_SECONDARY, {
         username: 'Dominus • Registradora',
         avatar_url: icon,
         embeds: [{
@@ -125,7 +145,7 @@ export default async function handler(req, res) {
         embed.image = { url: payload.imageUrl }
       }
 
-      await send(process.env.DISCORD_ACTIONS_WEBHOOK, {
+      await sendToBoth(process.env.DISCORD_ACTIONS_WEBHOOK, process.env.DISCORD_ACTIONS_WEBHOOK_SECONDARY, {
         username: 'Dominus • Registro de Ação',
         avatar_url: icon,
         embeds: [embed],
