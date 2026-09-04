@@ -241,3 +241,25 @@ tbody tr:hover { background: rgba(255,255,255,.018); }
 .btn.is-loading, .icon-button.is-loading { cursor: wait; opacity: .78; }
 .btn:disabled, .icon-button:disabled { cursor: not-allowed; }
 @keyframes button-spin { to { transform: rotate(360deg); } }
+
+/* Registro de Ação */
+.action-form-panel { max-width: 980px; }
+.action-form-title { display: flex; align-items: center; gap: 9px; color: var(--gold-2); margin-bottom: 18px; }
+.action-form-title h3 { margin: 0; color: #fff; }
+.action-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.action-form-grid label { min-width: 0; }
+.action-wide { grid-column: 1 / -1; }
+.optional-label { color: var(--muted); font-size: 11px; font-weight: 500; margin-left: 5px; }
+.action-upload { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+.paste-hint { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; }
+.action-preview { display: grid; grid-template-columns: 74px 1fr 36px; align-items: center; gap: 12px; margin-top: 14px; padding: 10px; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,.018); }
+.action-preview img { width: 74px; height: 58px; object-fit: cover; border-radius: 8px; }
+.action-preview strong, .action-preview span { display: block; }
+.action-preview span { color: var(--muted); font-size: 11px; margin-top: 3px; }
+.action-submit { display: flex; justify-content: flex-end; margin-top: 18px; }
+@media (max-width: 760px) { .action-form-grid { grid-template-columns: 1fr; } .action-wide { grid-column: auto; } }
+
+
+.farm-photo-panel { margin-top: 18px; }
+.farm-photo-header strong { display: block; font-size: 15px; }
+.farm-photo-header span { display: block; margin-top: 4px; color: var(--muted); font-size: 13px; }

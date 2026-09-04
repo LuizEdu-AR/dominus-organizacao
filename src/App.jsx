@@ -13,6 +13,7 @@ import FarmHistory from './pages/FarmHistory'
 import Notices from './pages/Notices'
 import Profile from './pages/Profile'
 import PendingAccess from './pages/PendingAccess'
+import RegisterAction from './pages/RegisterAction'
 
 export default function App() {
   const { user, loading } = useAuth()
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="/historico-vendas" element={<SalesHistory />} />
         <Route path="/farm" element={<Farm />} />
         <Route path="/historico-farm" element={<FarmHistory />} />
+        <Route path="/registro-de-acao" element={<RegisterAction />} />
         <Route path="/avisos" element={<Notices />} />
         <Route path="/perfil" element={<Profile />} />
       </Route>

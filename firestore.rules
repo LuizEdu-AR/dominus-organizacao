@@ -77,6 +77,14 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    match /actions/{actionId} {
+      allow read: if approved();
+      allow create: if approved()
+        && request.resource.data.authorUid == request.auth.uid;
+      allow delete: if management();
+      allow update: if false;
+    }
+
     match /notices/{noticeId} {
       allow read: if approved();
       allow create: if management()

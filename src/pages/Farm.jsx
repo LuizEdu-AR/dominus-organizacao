@@ -1,11 +1,12 @@
-import { useState } from 'react'
-import { Minus, Plus } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { ClipboardPaste, ImagePlus, Minus, Plus, X } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 import { useAuth } from '../context/AuthContext'
 import { addRecord } from '../services/dataService'
 import { sendDiscordEvent } from '../services/discordService'
 import { useToast } from '../components/toasts/ToastProvider'
 import LoadingButton from '../components/ui/LoadingButton'
+import { uploadImage } from '../services/imageUploadService'
 
 const FARM_ITEMS = [
   'Pano',
@@ -29,6 +30,8 @@ export default function Farm() {
   const { notify } = useToast()
   const [quantities, setQuantities] = useState({})
   const [submitting, setSubmitting] = useState(false)
+  const [photo, setPhoto] = useState(null)
+  const fileInputRef = useRef(null)
 
   const change = (name, delta) => setQuantities(q => ({ ...q, [name]: Math.max(0, Number(q[name] || 0) + delta) }))
 
@@ -42,17 +45,65 @@ export default function Farm() {
     setQuantities(q => ({ ...q, [name]: quantity }))
   }
 
+  function readImage(file) {
+    if (!file) return
+    if (!file.type.startsWith('image/')) return notify('O anexo deve ser uma imagem.', 'error')
+    if (file.size > 3 * 1024 * 1024) return notify('A imagem deve ter no máximo 3 MB.', 'error')
+
+    const reader = new FileReader()
+    reader.onload = () => setPhoto({
+      name: file.name || 'farm.png',
+      type: file.type,
+      dataUrl: reader.result,
+    })
+    reader.onerror = () => notify('Não foi possível carregar a imagem.', 'error')
+    reader.readAsDataURL(file)
+  }
+
+  useEffect(() => {
+    function handlePaste(event) {
+      const image = [...(event.clipboardData?.items || [])]
+        .find(item => item.type.startsWith('image/'))
+      if (!image) return
+
+      event.preventDefault()
+      readImage(image.getAsFile())
+    }
+
+    window.addEventListener('paste', handlePaste)
+    return () => window.removeEventListener('paste', handlePaste)
+  }, [])
+
   async function submit() {
     if (submitting) return
     const items = Object.entries(quantities).filter(([, qty]) => qty > 0).map(([name, qty]) => ({ name, qty }))
     if (!items.length) return notify('Informe pelo menos um item.', 'error')
 
-    const record = { memberUid: profile.uid, memberName: profile.name, memberId: profile.id, items }
     setSubmitting(true)
     try {
+      let imageUrl = ''
+      let imagePublicId = ''
+
+      if (photo?.dataUrl) {
+        const uploaded = await uploadImage(photo, 'dominus/farm')
+        imageUrl = uploaded.url
+        imagePublicId = uploaded.publicId
+      }
+
+      const record = {
+        memberUid: profile.uid,
+        memberName: profile.name,
+        memberId: profile.id,
+        items,
+        imageUrl,
+        imagePublicId,
+      }
+
       const ref = await addRecord('farms', record)
       await sendDiscordEvent('farm', { ...record, farmId: ref.id })
       setQuantities({})
+      setPhoto(null)
+      if (fileInputRef.current) fileInputRef.current.value = ''
       notify('Farm registrado e enviado ao Discord.')
     } catch (e) { notify(e.message, 'error') }
     finally { setSubmitting(false) }
@@ -85,6 +136,45 @@ export default function Farm() {
           </div>
         ))}
       </div>
+      <section className="panel farm-photo-panel">
+        <div className="farm-photo-header">
+          <div>
+            <strong>Comprovante do Farm</strong>
+            <span>Anexe uma imagem do depósito. Você também pode colar com CTRL + V.</span>
+          </div>
+        </div>
+
+        <div className="action-upload">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={event => readImage(event.target.files?.[0])}
+          />
+          <button type="button" className="btn secondary" onClick={() => fileInputRef.current?.click()}>
+            <ImagePlus size={17} /> Anexar foto
+          </button>
+          <div className="paste-hint">
+            <ClipboardPaste size={17} />
+            <span>Cole uma imagem com <strong>CTRL + V</strong></span>
+          </div>
+        </div>
+
+        {photo && (
+          <div className="action-preview">
+            <img src={photo.dataUrl} alt="Prévia do comprovante do farm" />
+            <div>
+              <strong>{photo.name}</strong>
+              <span>Será armazenada no Cloudinary ao confirmar o depósito.</span>
+            </div>
+            <button type="button" className="icon-button danger-text" onClick={() => setPhoto(null)} title="Remover imagem">
+              <X size={17} />
+            </button>
+          </div>
+        )}
+      </section>
+
       <div className="farm-actions"><LoadingButton className="btn primary" onClick={submit} loading={submitting} loadingText="Registrando...">Confirmar depósito</LoadingButton></div>
     </>
   )
