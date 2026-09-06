@@ -144,6 +144,7 @@ tbody tr:hover { background: rgba(255,255,255,.018); }
 .farm-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
 .farm-card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
 .farm-icon { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 12px; background: linear-gradient(135deg, rgba(111,45,189,.22), rgba(212,175,55,.10)); color: var(--gold-2); font-weight: 900; margin-bottom: 12px; }
+.farm-icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .farm-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
 
 .notice-grid { display: grid; gap: 12px; }
