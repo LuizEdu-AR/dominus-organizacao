@@ -9,20 +9,20 @@ import LoadingButton from '../components/ui/LoadingButton'
 import { uploadImage } from '../services/imageUploadService'
 
 const FARM_ITEMS = [
-  { name: 'Pano', image: '/images/farm/pano.png' },
-  { name: 'Chip', image: '/images/farm/chip.png' },
-  { name: 'Ferro de Solda', image: '/images/farm/ferro_de_solda.png' },
-  { name: 'Aço', image: '/images/farm/aco.png' },
-  { name: 'Plástico Processado', image: '/images/farm/plastico_processado.png' },
-  { name: 'Materiais Reciclados', image: '/images/farm/materiais_reciclados.png' },
-  { name: 'Cabo', image: '/images/farm/cabo.png' },
-  { name: 'Cinta', image: '/images/farm/cinta.png' },
-  { name: 'Borracha Processada', image: '/images/farm/borracha_processada.png' },
-  { name: 'Fibra de Carbono', image: '/images/farm/fibra_de_carbono.png' },
-  { name: 'Transponder', image: '/images/farm/transponder.png' },
-  { name: 'Alumínio Chapado', image: '/images/farm/aluminio_chapado.png' },
-  { name: 'Módulo ECU', image: '/images/farm/modulo_ecu.png' },
-  { name: 'Cobre Escovado', image: '/images/farm/cobre_escovado.png' },
+  'Pano',
+  'Chip',
+  'Ferro de Solda',
+  'Aço',
+  'Plástico Processado',
+  'Materiais Reciclados',
+  'Cabo',
+  'Cinta',
+  'Borracha Processada',
+  'Fibra de Carbono',
+  'Transponder',
+  'Alumínio Chapado',
+  'Módulo ECU',
+  'Cobre Escovado',
 ]
 
 export default function Farm() {
@@ -75,6 +75,11 @@ export default function Farm() {
   }, [])
 
   async function submit() {
+    if (!photo?.dataUrl) {
+      notify('Anexe uma imagem do seu baú pessoal para registrar o Farm.', 'error')
+      return
+    }
+
     if (submitting) return
     const items = Object.entries(quantities).filter(([, qty]) => qty > 0).map(([name, qty]) => ({ name, qty }))
     if (!items.length) return notify('Informe pelo menos um item.', 'error')
@@ -113,9 +118,9 @@ export default function Farm() {
     <>
       <PageHeader eyebrow="BAÚ" title="Farm" description="Informe os itens depositados no baú da organização." />
       <div className="farm-grid">
-        {FARM_ITEMS.map(({ name, image }) => (
+        {FARM_ITEMS.map((name, index) => (
           <div className="farm-card" key={name}>
-            <div className="farm-icon"><img src={image} alt={name} /></div>
+            <div className="farm-icon">{String(index + 1).padStart(2, '0')}</div>
             <strong>{name}</strong>
             <div className="qty-control">
               <button type="button" onClick={() => change(name, -1)}><Minus size={15} /></button>
@@ -140,7 +145,7 @@ export default function Farm() {
         <div className="farm-photo-header">
           <div>
             <strong>Comprovante do Farm</strong>
-            <span>Anexe uma imagem do depósito. Você também pode colar com CTRL + V.</span>
+            <span>Imagem obrigatória. Faça o print mostrando apenas os itens no seu baú pessoal, evitando capturar áreas desnecessárias da tela. Assim, o comprovante fica mais leve, nítido e fácil de conferir. Você também pode colar a imagem com CTRL + V.</span>
           </div>
         </div>
 
