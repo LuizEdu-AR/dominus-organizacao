@@ -178,21 +178,22 @@ export default function RegisterSale() {
         description="Monte a venda, alterne entre Pista e Parceria e finalize o registro."
       />
 
-      <div className="segmented">
-        {['PISTA', 'PARCERIA'].map(type => (
-          <button
-            key={type}
-            className={saleType === type ? 'active' : ''}
-            onClick={() => setSaleType(type)}
-          >
-            {type}
-          </button>
-        ))}
-      </div>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, flexWrap: 'wrap' }}>
+        <div className="segmented" style={{ marginBottom: 0 }}>
+          {['PISTA', 'PARCERIA'].map(type => (
+            <button
+              key={type}
+              className={saleType === type ? 'active' : ''}
+              onClick={() => setSaleType(type)}
+            >
+              {type}
+            </button>
+          ))}
+        </div>
 
-      {saleType === 'PARCERIA' && (
-        <section className="panel sale-partnership-panel">
-          <label>Organização parceira
+        {saleType === 'PARCERIA' && (
+          <label style={{ display: 'grid', gap: 6, width: 'min(330px, 100%)' }}>
+            <span style={{ fontSize: 13, fontWeight: 700 }}>Organização parceira</span>
             <select value={partnershipId} onChange={event => setPartnershipId(event.target.value)}>
               <option value="">Selecione a parceria</option>
               {partnerships.map(partnership => (
@@ -200,14 +201,13 @@ export default function RegisterSale() {
               ))}
             </select>
           </label>
-          {partnerships.length === 0 && <span className="muted">Nenhuma parceria cadastrada. Peça a um Líder para adicionar uma parceria na seção Parcerias.</span>}
-          {selectedPartnership && (
-            <div className="sale-partnership-details">
-              <span><strong>Chat:</strong> {selectedPartnership.chat}</span>
-              <span><strong>Produto:</strong> {selectedPartnership.product}</span>
-            </div>
-          )}
-        </section>
+        )}
+      </div>
+
+      {saleType === 'PARCERIA' && partnerships.length === 0 && (
+        <span className="muted" style={{ display: 'block', marginTop: 10 }}>
+          Nenhuma parceria cadastrada. Peça a um Líder para adicionar uma parceria na seção Parcerias.
+        </span>
       )}
 
       <div className="sales-layout sale-list-layout">
