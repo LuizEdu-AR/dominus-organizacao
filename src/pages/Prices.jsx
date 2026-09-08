@@ -16,6 +16,7 @@ export default function Prices() {
   const [factionFeePercentage, setFactionFeePercentage] = useState(0)
   const [busyAction, setBusyAction] = useState(null)
   const [draggedProductId, setDraggedProductId] = useState(null)
+  const [dragOverProductId, setDragOverProductId] = useState(null)
   const [draft, setDraft] = useState({
     name: '',
     category: 'Equipamentos',
@@ -137,8 +138,111 @@ export default function Prices() {
     })
   }
 
+  function startDragging(event, productId) {
+    const row = event.currentTarget.closest('tr')
+    setDraggedProductId(productId)
+    setDragOverProductId(productId)
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', productId)
+
+    if (row) {
+      const clone = row.cloneNode(true)
+      const cells = row.querySelectorAll('td')
+      const cloneCells = clone.querySelectorAll('td')
+
+      clone.classList.add('price-drag-preview')
+      clone.style.width = `${row.getBoundingClientRect().width}px`
+      clone.style.position = 'fixed'
+      clone.style.top = '-1000px'
+      clone.style.left = '-1000px'
+      clone.style.pointerEvents = 'none'
+
+      cloneCells.forEach((cell, index) => {
+        const width = cells[index]?.getBoundingClientRect().width
+        if (width) cell.style.width = `${width}px`
+      })
+
+      const previewTable = document.createElement('table')
+      previewTable.className = 'price-drag-preview-table'
+      const tbody = document.createElement('tbody')
+      tbody.appendChild(clone)
+      previewTable.appendChild(tbody)
+      document.body.appendChild(previewTable)
+
+      event.dataTransfer.setDragImage(previewTable, 30, Math.max(18, row.getBoundingClientRect().height / 2))
+      requestAnimationFrame(() => previewTable.remove())
+    }
+  }
+
+  function finishDragging() {
+    setDraggedProductId(null)
+    setDragOverProductId(null)
+  }
+
   return (
     <>
+      <style>{`
+        .price-sort-row {
+          position: relative;
+          transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease, opacity 180ms ease;
+        }
+        .price-sort-row td {
+          transition: background 180ms ease, border-color 180ms ease;
+        }
+        .price-sort-row.is-dragging {
+          z-index: 20;
+          transform: translateY(-3px) scale(1.008);
+          filter: drop-shadow(0 12px 18px rgba(0, 0, 0, .34));
+        }
+        .price-sort-row.is-dragging td {
+          background: rgba(124, 58, 237, .14);
+          border-top: 1px solid rgba(139, 92, 246, .55);
+          border-bottom: 1px solid rgba(139, 92, 246, .55);
+        }
+        .price-sort-row.is-drag-over:not(.is-dragging) td {
+          background: rgba(124, 58, 237, .075);
+        }
+        .price-sort-row.is-drag-over:not(.is-dragging) td:first-child {
+          box-shadow: inset 0 2px 0 rgba(168, 85, 247, .75);
+        }
+        .price-drag-handle {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          flex: 0 0 auto;
+          width: 30px;
+          height: 34px;
+          border-radius: 8px;
+          cursor: grab;
+          color: #8f8a9b;
+          transition: color 160ms ease, background 160ms ease, transform 160ms ease;
+          user-select: none;
+        }
+        .price-drag-handle:hover {
+          color: #c4b5fd;
+          background: rgba(124, 58, 237, .13);
+          transform: scale(1.05);
+        }
+        .price-drag-handle:active { cursor: grabbing; }
+        .price-drag-preview-table {
+          position: fixed;
+          top: -1000px;
+          left: -1000px;
+          z-index: 99999;
+          border-collapse: separate;
+          border-spacing: 0;
+          background: #15121d;
+          border: 1px solid rgba(139, 92, 246, .65);
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: 0 22px 44px rgba(0, 0, 0, .5), 0 0 0 1px rgba(124, 58, 237, .18);
+          opacity: .97;
+        }
+        .price-drag-preview-table td {
+          padding: 12px 10px;
+          background: #15121d;
+        }
+      `}</style>
       <PageHeader
         eyebrow="COMERCIAL"
         title="Tabela de preços"
@@ -196,7 +300,7 @@ export default function Prices() {
         <div className="panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
           <div>
             <h3 style={{ margin: 0 }}>Alterações da tabela</h3>
-            <p className="muted" style={{ margin: '6px 0 0' }}>Edite vários produtos ou reorganize a ordem.</p>
+            <p className="muted" style={{ margin: '6px 0 0' }}>Edite vários produtos ou reorganize a ordem e salve tudo de uma só vez.</p>
           </div>
           <LoadingButton
             className="btn primary"
@@ -205,7 +309,7 @@ export default function Prices() {
             disabled={Boolean(busyAction)}
             loadingText="Salvando tudo..."
           >
-            <Save size={17} /> Salvar
+            <Save size={17} /> Salvar todas as alterações
           </LoadingButton>
         </div>
       )}
@@ -220,32 +324,34 @@ export default function Prices() {
                 {items.map(product => (
                   <tr
                     key={product.id}
+                    className={`price-sort-row ${draggedProductId === product.id ? 'is-dragging' : ''} ${dragOverProductId === product.id ? 'is-drag-over' : ''}`}
+                    onDragEnter={() => {
+                      if (draggedProductId) setDragOverProductId(product.id)
+                    }}
                     onDragOver={event => {
-                      if (!isLeader(profile?.role)) return
+                      if (!isLeader(profile?.role) || !draggedProductId) return
                       event.preventDefault()
+                      event.dataTransfer.dropEffect = 'move'
+                      setDragOverProductId(product.id)
                       moveProduct(product.id)
                     }}
                     onDrop={event => {
                       event.preventDefault()
-                      setDraggedProductId(null)
+                      finishDragging()
                     }}
-                    style={{ opacity: draggedProductId === product.id ? 0.55 : 1 }}
                   >
                     <td>
                       {isLeader(profile?.role) ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <span
+                            className="price-drag-handle"
                             draggable
-                            onDragStart={event => {
-                              setDraggedProductId(product.id)
-                              event.dataTransfer.effectAllowed = 'move'
-                              event.dataTransfer.setData('text/plain', product.id)
-                            }}
-                            onDragEnd={() => setDraggedProductId(null)}
-                            title="Segure e arraste para mudar a ordem"
-                            style={{ display: 'inline-flex', cursor: 'grab', color: '#8f8a9b', flex: '0 0 auto' }}
+                            onDragStart={event => startDragging(event, product.id)}
+                            onDragEnd={finishDragging}
+                            title="Segure e arraste a linha para mudar a ordem"
+                            aria-label={`Arrastar ${product.name}`}
                           >
-                            <GripVertical size={18} />
+                            <GripVertical size={19} />
                           </span>
                           <input style={{ flex: 1 }} value={product.name} onChange={event => patchLocal(product.id, 'name', event.target.value)} />
                         </div>
