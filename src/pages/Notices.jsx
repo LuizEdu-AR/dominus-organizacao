@@ -3,6 +3,7 @@ import { Megaphone, Plus, Trash2 } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 import { useAuth } from '../context/AuthContext'
 import { addRecord, getOrderedCollection, removeRecord } from '../services/dataService'
+import { sendDiscordEvent } from '../services/discordService'
 import { dateTime } from '../utils/formatters'
 import { isManagement } from '../utils/permissions'
 import { useToast } from '../components/toasts/ToastProvider'
@@ -23,8 +24,18 @@ export default function Notices() {
     setPublishing(true)
     try {
       await addRecord('notices', { ...form, authorName: profile.name, authorUid: profile.uid })
-    setForm({ title: '', text: '' })
-    notify('Aviso publicado.')
+      try {
+        await sendDiscordEvent('notice', {
+          title: form.title,
+          text: form.text,
+          authorName: profile.name,
+          authorId: profile.id,
+        })
+        notify('Aviso publicado no site e enviado ao Discord.')
+      } catch (discordError) {
+        notify('Aviso publicado no site, mas não foi possível enviar ao Discord.', 'error')
+      }
+      setForm({ title: '', text: '' })
       load()
     } catch (e) { notify(e.message, 'error') }
     finally { setPublishing(false) }

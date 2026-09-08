@@ -294,3 +294,38 @@ tbody tr:hover { background: rgba(255,255,255,.018); }
   .partnership-info { flex-direction: column; gap: 4px; }
   .partnership-info strong { text-align: left; }
 }
+
+/* Registradora: escolha do tipo de venda e parceria */
+.sale-type-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+
+.sale-type-segmented {
+  margin-bottom: 0;
+}
+
+.sale-partnership-select {
+  display: grid;
+  gap: 6px;
+  width: min(330px, 100%);
+}
+
+.sale-partnership-select > span {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .sale-type-row {
+    align-items: stretch;
+  }
+
+  .sale-partnership-select {
+    width: 100%;
+  }
+}
+

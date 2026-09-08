@@ -153,6 +153,38 @@ export default async function handler(req, res) {
         avatar_url: icon,
         embeds: [embed],
       })
+    } else if (type === 'notice') {
+      const managementRoles = [
+        'leader',
+        'manager_general',
+        'manager_actions',
+        'manager_partnerships',
+        'manager_finance',
+      ]
+      if (!managementRoles.includes(caller.role)) {
+        return res.status(403).json({ error: 'Apenas a gestão pode publicar avisos.' })
+      }
+
+      const roleId = process.env.DISCORD_NOTICES_ROLE_ID
+      if (!roleId) throw new Error('Cargo de avisos do Discord não configurado.')
+
+      await send(process.env.DISCORD_NOTICES_WEBHOOK, {
+        username: 'Dominus • Avisos',
+        avatar_url: icon,
+        content: `<@&${roleId}>`,
+        allowed_mentions: { roles: [roleId] },
+        embeds: [{
+          color: 0xD4AF37,
+          author: { name: 'DOMINUS • NOVO AVISO', icon_url: icon },
+          title: payload.title || 'Aviso',
+          description: payload.text || '-',
+          fields: [
+            { name: 'Publicado por', value: `${payload.authorName || caller.name || 'Gestão'}${payload.authorId ? ` • ID ${payload.authorId}` : ''}`, inline: false },
+          ],
+          thumbnail: { url: icon },
+          timestamp: new Date().toISOString(),
+        }],
+      })
     } else if (type === 'hierarchy') {
       if (caller.role !== 'leader') return res.status(403).json({ error: 'Apenas líderes podem enviar a hierarquia.' })
 

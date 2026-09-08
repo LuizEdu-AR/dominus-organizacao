@@ -178,8 +178,8 @@ export default function RegisterSale() {
         description="Monte a venda, alterne entre Pista e Parceria e finalize o registro."
       />
 
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, flexWrap: 'wrap' }}>
-        <div className="segmented" style={{ marginBottom: 0 }}>
+      <div className="sale-type-row">
+        <div className="segmented sale-type-segmented">
           {['PISTA', 'PARCERIA'].map(type => (
             <button
               key={type}
@@ -192,8 +192,8 @@ export default function RegisterSale() {
         </div>
 
         {saleType === 'PARCERIA' && (
-          <label style={{ display: 'grid', gap: 6, width: 'min(330px, 100%)' }}>
-            <span style={{ fontSize: 13, fontWeight: 700 }}>Organização parceira</span>
+          <label className="sale-partnership-select">
+            <span>Organização parceira</span>
             <select value={partnershipId} onChange={event => setPartnershipId(event.target.value)}>
               <option value="">Selecione a parceria</option>
               {partnerships.map(partnership => (
