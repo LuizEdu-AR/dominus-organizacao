@@ -76,7 +76,7 @@ export default function ProtectedLayout() {
 
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="brand">
-          <img src="/images/dominus-logo.png" alt="Dominus" />
+          <img src="/images/dominus-logo-v2.png" alt="Dominus" />
           <div><strong>DOMINUS</strong><span>Organização</span></div>
 
           <button

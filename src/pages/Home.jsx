@@ -24,7 +24,7 @@ export default function Home() {
           <h2>Poder. Organização. Luxo. Autoridade.</h2>
           <p>Acesse rapidamente as principais operações da organização.</p>
         </div>
-        <img src="/images/dominus-logo.png" alt="" />
+        <img src="/images/dominus-logo-v2.png" alt="" />
       </div>
       <div className="shortcut-grid">
         {shortcuts.map(([path, title, description, Icon]) => (

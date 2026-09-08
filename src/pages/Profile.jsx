@@ -36,7 +36,7 @@ export default function Profile() {
       <PageHeader eyebrow="CONTA" title="Meu perfil" description="Seu ID é permanente e não pode ser alterado." />
       <div className="profile-grid">
         <div className="panel profile-card">
-          <img src="/images/dominus-logo.png" alt="" />
+          <img src="/images/dominus-logo-v2.png" alt="" />
           <h2>{profile?.name}</h2>
           <span className="badge">{ROLE_LABELS[profile?.role] || 'Sem cargo'}</span>
           <div className="profile-id">ID: <strong>{profile?.id}</strong></div>
