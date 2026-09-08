@@ -1,0 +1,130 @@
+/* Sidebar responsiva da Dominus
+   Desktop: mantém o comportamento existente.
+   Mobile/tablet: transforma a navegação em menu lateral deslizante. */
+
+.mobile-menu-button,
+.mobile-menu-close,
+.sidebar-overlay {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .app-shell {
+    display: block;
+    min-height: 100vh;
+  }
+
+  .mobile-menu-button {
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 43;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    background: rgba(17, 16, 23, .96);
+    color: #fff;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .28);
+    backdrop-filter: blur(10px);
+  }
+
+  .sidebar-is-open .mobile-menu-button {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .sidebar {
+    position: fixed !important;
+    inset: 0 auto 0 0;
+    z-index: 50;
+    width: min(300px, 86vw);
+    height: 100dvh !important;
+    padding: 18px 14px;
+    display: flex !important;
+    flex-direction: column;
+    gap: 18px;
+    background: rgba(10, 8, 13, .985);
+    border-right: 1px solid var(--border);
+    transform: translateX(-105%);
+    transition: transform .24s ease;
+    box-shadow: 24px 0 70px rgba(0, 0, 0, .45);
+    overflow: hidden;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar .brand {
+    position: relative;
+    padding-right: 44px;
+    flex: 0 0 auto;
+  }
+
+  .mobile-menu-close {
+    position: absolute;
+    top: 10px;
+    right: 2px;
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: #15131a;
+    color: #fff;
+  }
+
+  .sidebar nav {
+    display: flex !important;
+    flex-direction: column;
+    grid-template-columns: none !important;
+    gap: 4px;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 2px;
+  }
+
+  .sidebar-user {
+    margin-top: auto !important;
+    flex: 0 0 auto;
+    background: rgba(10, 8, 13, .985);
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    display: block;
+    border: 0;
+    padding: 0;
+    background: rgba(0, 0, 0, .62);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity .22s ease, visibility .22s ease;
+    backdrop-filter: blur(2px);
+  }
+
+  .sidebar-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .main-content {
+    min-width: 0;
+    padding: 72px 14px 22px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .sidebar-overlay {
+    transition: none;
+  }
+}

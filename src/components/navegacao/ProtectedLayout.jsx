@@ -1,11 +1,13 @@
+import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   Bell, Boxes, ChevronRight, CircleDollarSign, ClipboardList, Crown, Handshake,
-  Home, LogOut, PackageOpen, ScrollText, Swords, UserRound, Users
+  Home, LogOut, Menu, PackageOpen, ScrollText, Swords, UserRound, Users, X
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { logoutUser } from '../../services/authService'
 import { isApproved, isManagement, ROLE_LABELS } from '../../utils/permissions'
+import './ProtectedLayout.css'
 
 const links = [
   ['/', 'Início', Home],
@@ -26,6 +28,22 @@ export default function ProtectedLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const approved = isApproved(profile)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  useEffect(() => {
+    setSidebarOpen(false)
+  }, [location.pathname])
+
+  useEffect(() => {
+    if (!sidebarOpen) return undefined
+
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') setSidebarOpen(false)
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [sidebarOpen])
 
   if (profile && !approved && location.pathname !== '/aguardando' && location.pathname !== '/perfil') {
     navigate('/aguardando', { replace: true })
@@ -37,18 +55,51 @@ export default function ProtectedLayout() {
   }
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
+    <div className={`app-shell ${sidebarOpen ? 'sidebar-is-open' : ''}`}>
+      <button
+        type="button"
+        className="mobile-menu-button"
+        onClick={() => setSidebarOpen(true)}
+        aria-label="Abrir menu"
+        aria-expanded={sidebarOpen}
+      >
+        <Menu size={22} />
+      </button>
+
+      <button
+        type="button"
+        className={`sidebar-overlay ${sidebarOpen ? 'visible' : ''}`}
+        onClick={() => setSidebarOpen(false)}
+        aria-label="Fechar menu"
+        tabIndex={sidebarOpen ? 0 : -1}
+      />
+
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="brand">
           <img src="/images/dominus-logo.png" alt="Dominus" />
           <div><strong>DOMINUS</strong><span>Organização</span></div>
+
+          <button
+            type="button"
+            className="mobile-menu-close"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Fechar menu"
+          >
+            <X size={21} />
+          </button>
         </div>
 
         <nav>
           {(approved
             ? links.filter(([path]) => !['/historico-vendas', '/historico-farm'].includes(path) || isManagement(profile?.role))
             : links.filter(([path]) => path === '/perfil')).map(([path, label, Icon]) => (
-            <NavLink key={path} to={path} end={path === '/'} className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+            <NavLink
+              key={path}
+              to={path}
+              end={path === '/'}
+              className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
+              onClick={() => setSidebarOpen(false)}
+            >
               <Icon size={18} /><span>{label}</span><ChevronRight size={15} className="nav-arrow" />
             </NavLink>
           ))}
