@@ -264,3 +264,33 @@ tbody tr:hover { background: rgba(255,255,255,.018); }
 .farm-photo-panel { margin-top: 18px; }
 .farm-photo-header strong { display: block; font-size: 15px; }
 .farm-photo-header span { display: block; margin-top: 4px; color: var(--muted); font-size: 13px; }
+
+/* Parcerias */
+.partnership-editor { margin-bottom: 20px; }
+.partnership-form-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) auto; gap: 12px; align-items: end; }
+.partnership-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.partnership-card { background: linear-gradient(145deg, rgba(111,45,189,.08), var(--panel) 42%); border: 1px solid var(--border); border-radius: 16px; padding: 18px; }
+.partnership-card-head { display: grid; grid-template-columns: 42px 1fr auto; align-items: center; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+.partnership-card-head h3 { margin: 3px 0 0; }
+.partnership-icon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 11px; color: var(--gold-2); background: rgba(212,175,55,.08); }
+.partnership-actions { align-self: start; }
+.partnership-info { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.045); }
+.partnership-info:last-child { border-bottom: 0; padding-bottom: 0; }
+.partnership-info span { color: var(--muted); }
+.partnership-info strong { text-align: right; overflow-wrap: anywhere; }
+.partnership-loading { min-height: 240px; }
+.sale-partnership-panel { display: grid; grid-template-columns: minmax(260px, 420px) 1fr; gap: 14px 22px; align-items: end; margin-bottom: 18px; }
+.sale-partnership-details { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; color: var(--muted); font-size: 13px; padding-bottom: 10px; }
+.sale-partnership-details strong { color: #fff; }
+
+@media (max-width: 1050px) {
+  .partnership-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .partnership-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .partnership-form-grid, .sale-partnership-panel { grid-template-columns: 1fr; }
+  .partnership-card-head { grid-template-columns: 42px 1fr; }
+  .partnership-actions { grid-column: 1 / -1; }
+  .partnership-info { flex-direction: column; gap: 4px; }
+  .partnership-info strong { text-align: left; }
+}

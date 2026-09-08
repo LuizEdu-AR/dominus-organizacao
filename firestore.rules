@@ -62,7 +62,7 @@ service cloud.firestore {
     }
 
     match /sales/{saleId} {
-      allow read: if approved();
+      allow read: if management();
       allow create: if approved()
         && request.resource.data.sellerUid == request.auth.uid;
       allow delete: if management();
@@ -70,7 +70,7 @@ service cloud.firestore {
     }
 
     match /farms/{farmId} {
-      allow read: if approved();
+      allow read: if management();
       allow create: if approved()
         && request.resource.data.memberUid == request.auth.uid;
       allow delete: if management();
@@ -83,6 +83,12 @@ service cloud.firestore {
         && request.resource.data.authorUid == request.auth.uid;
       allow delete: if management();
       allow update: if false;
+    }
+
+
+    match /partnerships/{partnershipId} {
+      allow read: if approved();
+      allow create, update, delete: if leader();
     }
 
     match /notices/{noticeId} {

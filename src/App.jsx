@@ -14,9 +14,11 @@ import Notices from './pages/Notices'
 import Profile from './pages/Profile'
 import PendingAccess from './pages/PendingAccess'
 import RegisterAction from './pages/RegisterAction'
+import Partnerships from './pages/Partnerships'
+import { isManagement } from './utils/permissions'
 
 export default function App() {
-  const { user, loading } = useAuth()
+  const { user, profile, loading } = useAuth()
 
   if (loading) {
     return <div className="screen-center"><div className="spinner" /></div>
@@ -33,9 +35,10 @@ export default function App() {
         <Route path="/hierarquia" element={<Hierarchy />} />
         <Route path="/tabela-de-precos" element={<Prices />} />
         <Route path="/registradora" element={<RegisterSale />} />
-        <Route path="/historico-vendas" element={<SalesHistory />} />
+        <Route path="/parcerias" element={<Partnerships />} />
+        <Route path="/historico-vendas" element={isManagement(profile?.role) ? <SalesHistory /> : <Navigate to="/" replace />} />
         <Route path="/farm" element={<Farm />} />
-        <Route path="/historico-farm" element={<FarmHistory />} />
+        <Route path="/historico-farm" element={isManagement(profile?.role) ? <FarmHistory /> : <Navigate to="/" replace />} />
         <Route path="/registro-de-acao" element={<RegisterAction />} />
         <Route path="/avisos" element={<Notices />} />
         <Route path="/perfil" element={<Profile />} />

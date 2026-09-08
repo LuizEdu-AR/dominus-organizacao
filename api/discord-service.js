@@ -89,6 +89,9 @@ export default async function handler(req, res) {
           fields: [
             { name: 'Vendedor', value: `${payload.sellerName} • ID ${payload.sellerId}`, inline: true },
             { name: 'Tipo', value: payload.type, inline: true },
+            ...(payload.type === 'PARCERIA' && payload.partnershipName
+              ? [{ name: 'Parceria', value: payload.partnershipName, inline: true }]
+              : []),
             { name: 'Desconto', value: money(payload.discount), inline: true },
             { name: 'Taxa da facção', value: money(payload.factionFee), inline: true },
             { name: 'Total', value: `**${money(payload.total)}**`, inline: true },

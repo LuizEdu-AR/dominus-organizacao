@@ -1,17 +1,18 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
-  Bell, Boxes, ChevronRight, CircleDollarSign, ClipboardList, Crown,
+  Bell, Boxes, ChevronRight, CircleDollarSign, ClipboardList, Crown, Handshake,
   Home, LogOut, PackageOpen, ScrollText, Swords, UserRound, Users
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { logoutUser } from '../../services/authService'
-import { isApproved, ROLE_LABELS } from '../../utils/permissions'
+import { isApproved, isManagement, ROLE_LABELS } from '../../utils/permissions'
 
 const links = [
   ['/', 'Início', Home],
   ['/hierarquia', 'Hierarquia', Users],
   ['/tabela-de-precos', 'Tabela de preços', CircleDollarSign],
   ['/registradora', 'Registradora', ClipboardList],
+  ['/parcerias', 'Parcerias', Handshake],
   ['/historico-vendas', 'Histórico de vendas', ScrollText],
   ['/farm', 'Farm', Boxes],
   ['/historico-farm', 'Histórico de farm', PackageOpen],
@@ -44,7 +45,9 @@ export default function ProtectedLayout() {
         </div>
 
         <nav>
-          {(approved ? links : links.filter(([path]) => path === '/perfil')).map(([path, label, Icon]) => (
+          {(approved
+            ? links.filter(([path]) => !['/historico-vendas', '/historico-farm'].includes(path) || isManagement(profile?.role))
+            : links.filter(([path]) => path === '/perfil')).map(([path, label, Icon]) => (
             <NavLink key={path} to={path} end={path === '/'} className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
               <Icon size={18} /><span>{label}</span><ChevronRight size={15} className="nav-arrow" />
             </NavLink>

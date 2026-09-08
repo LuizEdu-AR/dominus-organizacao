@@ -18,14 +18,18 @@ export default function RegisterSale() {
   const [saleType, setSaleType] = useState('PISTA')
   const [factionFeePercentage, setFactionFeePercentage] = useState(0)
   const [submitting, setSubmitting] = useState(false)
+  const [partnerships, setPartnerships] = useState([])
+  const [partnershipId, setPartnershipId] = useState('')
 
   useEffect(() => {
     Promise.all([
       getCollection('products'),
       getRecord('settings', 'general'),
-    ]).then(([productList, settings]) => {
+      getCollection('partnerships'),
+    ]).then(([productList, settings, partnershipList]) => {
       setProducts(productList)
       setFactionFeePercentage(Number(settings?.factionFeePercentage || 0))
+      setPartnerships([...partnershipList].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR')))
     }).catch(() => {
       notify('Não foi possível carregar os dados da registradora.', 'error')
     })
@@ -51,6 +55,8 @@ export default function RegisterSale() {
         subtotal: unitPrice * qty,
       }
     }), [products, quantities, saleType])
+
+  const selectedPartnership = partnerships.find(partnership => partnership.id === partnershipId) || null
 
   const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0)
   const discount = items.reduce((sum, item) => sum + item.discount, 0)
@@ -83,12 +89,15 @@ export default function RegisterSale() {
   async function finalize() {
     if (submitting) return
     if (!items.length) return notify('Adicione pelo menos um item.', 'error')
+    if (saleType === 'PARCERIA' && !selectedPartnership) return notify('Selecione a organização parceira.', 'error')
 
     const sale = {
       sellerUid: profile.uid,
       sellerName: profile.name,
       sellerId: profile.id,
       type: saleType,
+      partnershipId: saleType === 'PARCERIA' ? selectedPartnership.id : '',
+      partnershipName: saleType === 'PARCERIA' ? selectedPartnership.name : '',
       items,
       subtotal,
       discount,
@@ -103,6 +112,7 @@ export default function RegisterSale() {
       const ref = await addRecord('sales', sale)
       await sendDiscordEvent('sale', { ...sale, saleId: ref.id })
       setQuantities({})
+      if (saleType === 'PARCERIA') setPartnershipId('')
       notify('Venda finalizada e enviada ao Discord.')
     } catch (error) {
       notify(error.message, 'error')
@@ -179,6 +189,26 @@ export default function RegisterSale() {
           </button>
         ))}
       </div>
+
+      {saleType === 'PARCERIA' && (
+        <section className="panel sale-partnership-panel">
+          <label>Organização parceira
+            <select value={partnershipId} onChange={event => setPartnershipId(event.target.value)}>
+              <option value="">Selecione a parceria</option>
+              {partnerships.map(partnership => (
+                <option key={partnership.id} value={partnership.id}>{partnership.name}</option>
+              ))}
+            </select>
+          </label>
+          {partnerships.length === 0 && <span className="muted">Nenhuma parceria cadastrada. Peça a um Líder para adicionar uma parceria na seção Parcerias.</span>}
+          {selectedPartnership && (
+            <div className="sale-partnership-details">
+              <span><strong>Chat:</strong> {selectedPartnership.chat}</span>
+              <span><strong>Produto:</strong> {selectedPartnership.product}</span>
+            </div>
+          )}
+        </section>
+      )}
 
       <div className="sales-layout sale-list-layout">
         <div className="sale-sections">
