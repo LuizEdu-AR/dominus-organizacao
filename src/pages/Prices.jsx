@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Percent, Plus, Save, Trash2 } from 'lucide-react'
+import { GripVertical, Percent, Plus, Save, Trash2 } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 import { useAuth } from '../context/AuthContext'
 import { addRecord, getCollection, getRecord, removeRecord, setRecord } from '../services/dataService'
@@ -15,6 +15,7 @@ export default function Prices() {
   const [products, setProducts] = useState([])
   const [factionFeePercentage, setFactionFeePercentage] = useState(0)
   const [busyAction, setBusyAction] = useState(null)
+  const [draggedProductId, setDraggedProductId] = useState(null)
   const [draft, setDraft] = useState({
     name: '',
     category: 'Equipamentos',
@@ -28,7 +29,13 @@ export default function Prices() {
       getCollection('products'),
       getRecord('settings', 'general'),
     ])
-    setProducts(productList)
+    setProducts(
+      [...productList].sort((a, b) => {
+        const orderA = Number.isFinite(Number(a.order)) ? Number(a.order) : Number.MAX_SAFE_INTEGER
+        const orderB = Number.isFinite(Number(b.order)) ? Number(b.order) : Number.MAX_SAFE_INTEGER
+        return orderA - orderB
+      })
+    )
     setFactionFeePercentage(Number(settings?.factionFeePercentage || 0))
   }
 
@@ -44,7 +51,7 @@ export default function Prices() {
     setBusyAction('seed')
     try {
       for (let i = 0; i < INITIAL_PRODUCTS.length; i++) {
-        await setRecord('products', `initial-${i + 1}`, INITIAL_PRODUCTS[i])
+        await setRecord('products', `initial-${i + 1}`, { ...INITIAL_PRODUCTS[i], order: i })
       }
       await setRecord('settings', 'general', { factionFeePercentage: 0 })
       notify('Produtos iniciais carregados.')
@@ -70,19 +77,20 @@ export default function Prices() {
     } finally { setBusyAction(null) }
   }
 
-  async function save(product) {
+  async function saveAll() {
     if (busyAction) return
-    setBusyAction(`save:${product.id}`)
+    setBusyAction('save-all')
     try {
-      await setRecord('products', product.id, {
+      await Promise.all(products.map((product, index) => setRecord('products', product.id, {
         name: product.name.trim(),
         category: product.category || 'Outros',
         price: Number(product.price),
         partnershipEnabled: Boolean(product.partnershipEnabled),
         partnershipPrice: Number(product.partnershipEnabled ? product.partnershipPrice : product.price),
-      })
-      notify('Produto atualizado.')
-      load()
+        order: index,
+      })))
+      notify('Todas as alterações foram salvas.')
+      await load()
     } catch (error) {
       notify(error.message, 'error')
     } finally { setBusyAction(null) }
@@ -98,6 +106,7 @@ export default function Prices() {
         ...draft,
         price: Number(draft.price),
         partnershipPrice: Number(draft.partnershipEnabled ? draft.partnershipPrice || draft.price : draft.price),
+        order: products.length,
       })
       setDraft({ name: '', category: 'Equipamentos', price: '', partnershipEnabled: false, partnershipPrice: '' })
       notify('Produto adicionado.')
@@ -109,6 +118,23 @@ export default function Prices() {
 
   function patchLocal(id, field, value) {
     setProducts(list => list.map(product => product.id === id ? { ...product, [field]: value } : product))
+  }
+
+  function moveProduct(targetId) {
+    if (!draggedProductId || draggedProductId === targetId) return
+
+    setProducts(current => {
+      const dragged = current.find(product => product.id === draggedProductId)
+      const target = current.find(product => product.id === targetId)
+      if (!dragged || !target || (dragged.category || 'Outros') !== (target.category || 'Outros')) return current
+
+      const next = [...current]
+      const from = next.findIndex(product => product.id === draggedProductId)
+      const to = next.findIndex(product => product.id === targetId)
+      const [moved] = next.splice(from, 1)
+      next.splice(to, 0, moved)
+      return next.map((product, index) => ({ ...product, order: index }))
+    })
   }
 
   return (
@@ -166,6 +192,24 @@ export default function Prices() {
         </div>
       )}
 
+      {isLeader(profile?.role) && products.length > 0 && (
+        <div className="panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+          <div>
+            <h3 style={{ margin: 0 }}>Alterações da tabela</h3>
+            <p className="muted" style={{ margin: '6px 0 0' }}>Edite vários produtos ou reorganize a ordem e salve tudo de uma só vez.</p>
+          </div>
+          <LoadingButton
+            className="btn primary"
+            onClick={saveAll}
+            loading={busyAction === 'save-all'}
+            disabled={Boolean(busyAction)}
+            loadingText="Salvando tudo..."
+          >
+            <Save size={17} /> Salvar todas as alterações
+          </LoadingButton>
+        </div>
+      )}
+
       {Object.entries(grouped).map(([category, items]) => (
         <div className="panel" key={category}>
           <div className="panel-title"><h3>{category}</h3><span>{items.length} produto(s)</span></div>
@@ -174,8 +218,39 @@ export default function Prices() {
               <thead><tr><th>Produto</th><th>Preço pista</th><th>Parceria</th><th>Preço parceria</th>{isLeader(profile?.role) && <th>Ações</th>}</tr></thead>
               <tbody>
                 {items.map(product => (
-                  <tr key={product.id}>
-                    <td>{isLeader(profile?.role) ? <input value={product.name} onChange={event => patchLocal(product.id, 'name', event.target.value)} /> : product.name}</td>
+                  <tr
+                    key={product.id}
+                    onDragOver={event => {
+                      if (!isLeader(profile?.role)) return
+                      event.preventDefault()
+                      moveProduct(product.id)
+                    }}
+                    onDrop={event => {
+                      event.preventDefault()
+                      setDraggedProductId(null)
+                    }}
+                    style={{ opacity: draggedProductId === product.id ? 0.55 : 1 }}
+                  >
+                    <td>
+                      {isLeader(profile?.role) ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span
+                            draggable
+                            onDragStart={event => {
+                              setDraggedProductId(product.id)
+                              event.dataTransfer.effectAllowed = 'move'
+                              event.dataTransfer.setData('text/plain', product.id)
+                            }}
+                            onDragEnd={() => setDraggedProductId(null)}
+                            title="Segure e arraste para mudar a ordem"
+                            style={{ display: 'inline-flex', cursor: 'grab', color: '#8f8a9b', flex: '0 0 auto' }}
+                          >
+                            <GripVertical size={18} />
+                          </span>
+                          <input style={{ flex: 1 }} value={product.name} onChange={event => patchLocal(product.id, 'name', event.target.value)} />
+                        </div>
+                      ) : product.name}
+                    </td>
                     <td>{isLeader(profile?.role) ? <input type="number" value={product.price} onChange={event => patchLocal(product.id, 'price', event.target.value)} /> : money(product.price)}</td>
                     <td>
                       {isLeader(profile?.role)
@@ -186,8 +261,7 @@ export default function Prices() {
                     {isLeader(profile?.role) && (
                       <td>
                         <div className="row-actions">
-                          <LoadingButton className="icon-button" onClick={() => save(product)} loading={busyAction === `save:${product.id}`} disabled={Boolean(busyAction)} loadingText=""><Save size={17} /></LoadingButton>
-                          <button className="icon-button danger-text" onClick={async () => { await removeRecord('products', product.id); load() }}><Trash2 size={17} /></button>
+                          <button className="icon-button danger-text" disabled={Boolean(busyAction)} onClick={async () => { await removeRecord('products', product.id); load() }}><Trash2 size={17} /></button>
                         </div>
                       </td>
                     )}
