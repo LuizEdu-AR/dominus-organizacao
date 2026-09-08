@@ -1,9 +1,9 @@
 import crypto from 'node:crypto'
 import { adminDb } from './_firebaseAdmin.js'
 
-const RETENTION_DAYS = 30
+const RETENTION_DAYS = 31
 const PAGE_SIZE = 100
-const COLLECTIONS = ['farms', 'actions']
+const COLLECTIONS = ['farms', 'actions', 'notices']
 
 function makeSignature(params, secret) {
   const source = Object.entries(params)

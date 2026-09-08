@@ -168,22 +168,28 @@ export default async function handler(req, res) {
       const roleId = process.env.DISCORD_NOTICES_ROLE_ID
       if (!roleId) throw new Error('Cargo de avisos do Discord não configurado.')
 
+      const noticeEmbed = {
+        color: 0xD4AF37,
+        author: { name: 'DOMINUS • NOVO AVISO', icon_url: icon },
+        title: payload.title || 'Aviso',
+        description: payload.text || '-',
+        fields: [
+          { name: 'Publicado por', value: `${payload.authorName || caller.name || 'Gestão'}${payload.authorId ? ` • ID ${payload.authorId}` : ''}`, inline: false },
+        ],
+        thumbnail: { url: icon },
+        timestamp: new Date().toISOString(),
+      }
+
+      if (payload.imageUrl) {
+        noticeEmbed.image = { url: payload.imageUrl }
+      }
+
       await send(process.env.DISCORD_NOTICES_WEBHOOK, {
         username: 'Dominus • Avisos',
         avatar_url: icon,
         content: `<@&${roleId}>`,
         allowed_mentions: { roles: [roleId] },
-        embeds: [{
-          color: 0xD4AF37,
-          author: { name: 'DOMINUS • NOVO AVISO', icon_url: icon },
-          title: payload.title || 'Aviso',
-          description: payload.text || '-',
-          fields: [
-            { name: 'Publicado por', value: `${payload.authorName || caller.name || 'Gestão'}${payload.authorId ? ` • ID ${payload.authorId}` : ''}`, inline: false },
-          ],
-          thumbnail: { url: icon },
-          timestamp: new Date().toISOString(),
-        }],
+        embeds: [noticeEmbed],
       })
     } else if (type === 'hierarchy') {
       if (caller.role !== 'leader') return res.status(403).json({ error: 'Apenas líderes podem enviar a hierarquia.' })
