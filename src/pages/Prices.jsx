@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { GripVertical, Percent, Plus, Save, Trash2 } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 import { useAuth } from '../context/AuthContext'
@@ -17,6 +17,8 @@ export default function Prices() {
   const [busyAction, setBusyAction] = useState(null)
   const [draggedProductId, setDraggedProductId] = useState(null)
   const [dragOverProductId, setDragOverProductId] = useState(null)
+  const dragPreviewRef = useRef(null)
+  const dragPointerRef = useRef({ id: null, offsetY: 0, startX: 0 })
   const [draft, setDraft] = useState({
     name: '',
     category: 'Equipamentos',
@@ -138,66 +140,113 @@ export default function Prices() {
     })
   }
 
-  function startDragging(event, productId) {
+  function createFloatingRow(row, event, productId) {
+    const rect = row.getBoundingClientRect()
+    const clone = row.cloneNode(true)
+    const sourceCells = row.querySelectorAll('td')
+    const cloneCells = clone.querySelectorAll('td')
+
+    clone.classList.remove('is-dragging', 'is-drag-over')
+    clone.classList.add('price-floating-row')
+    clone.removeAttribute('data-product-id')
+
+    cloneCells.forEach((cell, index) => {
+      const width = sourceCells[index]?.getBoundingClientRect().width
+      if (width) {
+        cell.style.width = `${width}px`
+        cell.style.minWidth = `${width}px`
+        cell.style.maxWidth = `${width}px`
+      }
+    })
+
+    clone.querySelectorAll('input, button').forEach(element => {
+      element.tabIndex = -1
+      element.style.pointerEvents = 'none'
+    })
+
+    const table = document.createElement('table')
+    table.className = 'price-floating-table'
+    table.style.width = `${rect.width}px`
+    table.style.left = `${rect.left}px`
+    table.style.top = `${rect.top}px`
+
+    const tbody = document.createElement('tbody')
+    tbody.appendChild(clone)
+    table.appendChild(tbody)
+    document.body.appendChild(table)
+
+    dragPreviewRef.current = table
+    dragPointerRef.current = {
+      id: productId,
+      offsetY: event.clientY - rect.top,
+      startX: rect.left,
+    }
+  }
+
+  function startPointerDragging(event, productId) {
+    if (event.button !== 0 || busyAction) return
+
     const row = event.currentTarget.closest('tr')
+    if (!row) return
+
+    event.preventDefault()
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+
     setDraggedProductId(productId)
     setDragOverProductId(productId)
-    event.dataTransfer.effectAllowed = 'move'
-    event.dataTransfer.setData('text/plain', productId)
+    createFloatingRow(row, event, productId)
 
-    if (row) {
-      const clone = row.cloneNode(true)
-      const cells = row.querySelectorAll('td')
-      const cloneCells = clone.querySelectorAll('td')
+    document.body.classList.add('price-is-sorting')
+  }
 
-      clone.classList.add('price-drag-preview')
-      clone.style.width = `${row.getBoundingClientRect().width}px`
-      clone.style.position = 'fixed'
-      clone.style.top = '-1000px'
-      clone.style.left = '-1000px'
-      clone.style.pointerEvents = 'none'
+  function updatePointerDragging(event) {
+    if (!dragPointerRef.current.id || !dragPreviewRef.current) return
 
-      cloneCells.forEach((cell, index) => {
-        const width = cells[index]?.getBoundingClientRect().width
-        if (width) cell.style.width = `${width}px`
-      })
+    const floating = dragPreviewRef.current
+    const top = event.clientY - dragPointerRef.current.offsetY
+    floating.style.transform = `translate3d(0, ${top - parseFloat(floating.style.top || 0)}px, 0)`
 
-      const previewTable = document.createElement('table')
-      previewTable.className = 'price-drag-preview-table'
-      const tbody = document.createElement('tbody')
-      tbody.appendChild(clone)
-      previewTable.appendChild(tbody)
-      document.body.appendChild(previewTable)
+    const element = document.elementFromPoint(event.clientX, event.clientY)
+    const targetRow = element?.closest?.('tr[data-product-id]')
+    const targetId = targetRow?.dataset?.productId
 
-      event.dataTransfer.setDragImage(previewTable, 30, Math.max(18, row.getBoundingClientRect().height / 2))
-      requestAnimationFrame(() => previewTable.remove())
+    if (targetId && targetId !== dragPointerRef.current.id) {
+      setDragOverProductId(targetId)
+      moveProduct(targetId)
     }
   }
 
   function finishDragging() {
+    dragPreviewRef.current?.remove()
+    dragPreviewRef.current = null
+    dragPointerRef.current = { id: null, offsetY: 0, startX: 0 }
     setDraggedProductId(null)
     setDragOverProductId(null)
+    document.body.classList.remove('price-is-sorting')
   }
+
+  useEffect(() => () => {
+    dragPreviewRef.current?.remove()
+    document.body.classList.remove('price-is-sorting')
+  }, [])
 
   return (
     <>
       <style>{`
         .price-sort-row {
           position: relative;
-          transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease, opacity 180ms ease;
+          transition: transform 220ms cubic-bezier(.2,.75,.25,1), background 180ms ease, opacity 180ms ease;
         }
         .price-sort-row td {
-          transition: background 180ms ease, border-color 180ms ease;
+          transition: background 180ms ease, border-color 180ms ease, opacity 180ms ease;
         }
         .price-sort-row.is-dragging {
-          z-index: 20;
-          transform: translateY(-3px) scale(1.008);
-          filter: drop-shadow(0 12px 18px rgba(0, 0, 0, .34));
+          opacity: .22;
         }
         .price-sort-row.is-dragging td {
-          background: rgba(124, 58, 237, .14);
-          border-top: 1px solid rgba(139, 92, 246, .55);
-          border-bottom: 1px solid rgba(139, 92, 246, .55);
+          background: rgba(124, 58, 237, .08);
+          border-top: 1px dashed rgba(139, 92, 246, .4);
+          border-bottom: 1px dashed rgba(139, 92, 246, .4);
         }
         .price-sort-row.is-drag-over:not(.is-dragging) td {
           background: rgba(124, 58, 237, .075);
@@ -224,23 +273,33 @@ export default function Prices() {
           transform: scale(1.05);
         }
         .price-drag-handle:active { cursor: grabbing; }
-        .price-drag-preview-table {
+        .price-floating-table {
           position: fixed;
-          top: -1000px;
-          left: -1000px;
           z-index: 99999;
+          pointer-events: none;
           border-collapse: separate;
           border-spacing: 0;
+          table-layout: fixed;
           background: #15121d;
-          border: 1px solid rgba(139, 92, 246, .65);
+          border: 1px solid rgba(139, 92, 246, .72);
           border-radius: 12px;
           overflow: hidden;
-          box-shadow: 0 22px 44px rgba(0, 0, 0, .5), 0 0 0 1px rgba(124, 58, 237, .18);
-          opacity: .97;
+          box-shadow: 0 24px 55px rgba(0, 0, 0, .52), 0 0 0 1px rgba(124, 58, 237, .18);
+          opacity: .985;
+          will-change: transform;
+          transform: translate3d(0, 0, 0) scale(1.01);
         }
-        .price-drag-preview-table td {
+        .price-floating-table td {
           padding: 12px 10px;
-          background: #15121d;
+          background: #15121d !important;
+        }
+        .price-floating-table input {
+          background: #0f0d15;
+        }
+        .price-is-sorting,
+        .price-is-sorting * {
+          cursor: grabbing !important;
+          user-select: none !important;
         }
       `}</style>
       <PageHeader
@@ -324,30 +383,18 @@ export default function Prices() {
                 {items.map(product => (
                   <tr
                     key={product.id}
+                    data-product-id={product.id}
                     className={`price-sort-row ${draggedProductId === product.id ? 'is-dragging' : ''} ${dragOverProductId === product.id ? 'is-drag-over' : ''}`}
-                    onDragEnter={() => {
-                      if (draggedProductId) setDragOverProductId(product.id)
-                    }}
-                    onDragOver={event => {
-                      if (!isLeader(profile?.role) || !draggedProductId) return
-                      event.preventDefault()
-                      event.dataTransfer.dropEffect = 'move'
-                      setDragOverProductId(product.id)
-                      moveProduct(product.id)
-                    }}
-                    onDrop={event => {
-                      event.preventDefault()
-                      finishDragging()
-                    }}
                   >
                     <td>
                       {isLeader(profile?.role) ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <span
                             className="price-drag-handle"
-                            draggable
-                            onDragStart={event => startDragging(event, product.id)}
-                            onDragEnd={finishDragging}
+                            onPointerDown={event => startPointerDragging(event, product.id)}
+                            onPointerMove={updatePointerDragging}
+                            onPointerUp={finishDragging}
+                            onPointerCancel={finishDragging}
                             title="Segure e arraste a linha para mudar a ordem"
                             aria-label={`Arrastar ${product.name}`}
                           >
