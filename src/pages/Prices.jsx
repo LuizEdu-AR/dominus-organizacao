@@ -196,7 +196,7 @@ export default function Prices() {
         <div className="panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
           <div>
             <h3 style={{ margin: 0 }}>Alterações da tabela</h3>
-            <p className="muted" style={{ margin: '6px 0 0' }}>Edite vários produtos ou reorganize a ordem e salve tudo de uma só vez.</p>
+            <p className="muted" style={{ margin: '6px 0 0' }}>Edite vários produtos ou reorganize a ordem.</p>
           </div>
           <LoadingButton
             className="btn primary"
@@ -205,7 +205,7 @@ export default function Prices() {
             disabled={Boolean(busyAction)}
             loadingText="Salvando tudo..."
           >
-            <Save size={17} /> Salvar todas as alterações
+            <Save size={17} /> Salvar
           </LoadingButton>
         </div>
       )}
