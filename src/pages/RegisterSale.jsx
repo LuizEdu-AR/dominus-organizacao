@@ -10,6 +10,62 @@ import LoadingButton from '../components/ui/LoadingButton'
 
 const isCard = (product) => (product.category || '').toLowerCase().includes('cart')
 
+function ProductSection({
+  title,
+  products: sectionProducts,
+  saleType,
+  quantities,
+  changeQty,
+  setQuantity,
+}) {
+  if (!sectionProducts.length) return null
+
+  return (
+    <section className="sale-section panel">
+      <div className="sale-section-header">
+        <h3>{title}</h3>
+        <span>{sectionProducts.length} produto(s)</span>
+      </div>
+
+      <div className="sale-product-list">
+        {sectionProducts.map(product => {
+          const partnershipActive = saleType === 'PARCERIA' && product.partnershipEnabled
+          const displayedPrice = partnershipActive ? product.partnershipPrice : product.price
+
+          return (
+            <div className="sale-product-row" key={product.id}>
+              <div className="sale-product-main">
+                <strong>{product.name}</strong>
+                <span className="product-price">{money(displayedPrice)}</span>
+                {partnershipActive && Number(product.partnershipPrice) < Number(product.price) && (
+                  <small>Parceria: desconto de {money(Number(product.price) - Number(product.partnershipPrice))} por unidade</small>
+                )}
+              </div>
+
+              <div className="qty-control sale-qty-control">
+                <button type="button" onClick={() => changeQty(product.id, -1)}><Minus size={15} /></button>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  inputMode="numeric"
+                  value={quantities[product.id] ?? 0}
+                  onChange={event => setQuantity(product.id, event.target.value)}
+                  onBlur={() => {
+                    if (quantities[product.id] === '') setQuantity(product.id, 0)
+                  }}
+                  aria-label={`Quantidade de ${product.name}`}
+                />
+                <button type="button" onClick={() => changeQty(product.id, 1)}><Plus size={15} /></button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
 export default function RegisterSale() {
   const { profile } = useAuth()
   const { notify } = useToast()
@@ -121,55 +177,6 @@ export default function RegisterSale() {
     }
   }
 
-  function ProductSection({ title, products: sectionProducts }) {
-    if (!sectionProducts.length) return null
-
-    return (
-      <section className="sale-section panel">
-        <div className="sale-section-header">
-          <h3>{title}</h3>
-          <span>{sectionProducts.length} produto(s)</span>
-        </div>
-
-        <div className="sale-product-list">
-          {sectionProducts.map(product => {
-            const partnershipActive = saleType === 'PARCERIA' && product.partnershipEnabled
-            const displayedPrice = partnershipActive ? product.partnershipPrice : product.price
-
-            return (
-              <div className="sale-product-row" key={product.id}>
-                <div className="sale-product-main">
-                  <strong>{product.name}</strong>
-                  <span className="product-price">{money(displayedPrice)}</span>
-                  {partnershipActive && Number(product.partnershipPrice) < Number(product.price) && (
-                    <small>Parceria: desconto de {money(Number(product.price) - Number(product.partnershipPrice))} por unidade</small>
-                  )}
-                </div>
-
-                <div className="qty-control sale-qty-control">
-                  <button type="button" onClick={() => changeQty(product.id, -1)}><Minus size={15} /></button>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    inputMode="numeric"
-                    value={quantities[product.id] ?? 0}
-                    onChange={event => setQuantity(product.id, event.target.value)}
-                    onBlur={() => {
-                      if (quantities[product.id] === '') setQuantity(product.id, 0)
-                    }}
-                    aria-label={`Quantidade de ${product.name}`}
-                  />
-                  <button type="button" onClick={() => changeQty(product.id, 1)}><Plus size={15} /></button>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </section>
-    )
-  }
-
   return (
     <>
       <PageHeader
@@ -212,8 +219,22 @@ export default function RegisterSale() {
 
       <div className="sales-layout sale-list-layout">
         <div className="sale-sections">
-          <ProductSection title="Tecnologia e Equipamentos" products={technologyAndEquipment} />
-          <ProductSection title="Cartões" products={cards} />
+          <ProductSection
+            title="Tecnologia e Equipamentos"
+            products={technologyAndEquipment}
+            saleType={saleType}
+            quantities={quantities}
+            changeQty={changeQty}
+            setQuantity={setQuantity}
+          />
+          <ProductSection
+            title="Cartões"
+            products={cards}
+            saleType={saleType}
+            quantities={quantities}
+            changeQty={changeQty}
+            setQuantity={setQuantity}
+          />
         </div>
 
         <aside className="summary-card">
