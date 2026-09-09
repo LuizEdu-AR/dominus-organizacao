@@ -8,21 +8,31 @@ import { useToast } from '../components/toasts/ToastProvider'
 import LoadingButton from '../components/ui/LoadingButton'
 import { uploadImage } from '../services/imageUploadService'
 
-const FARM_ITEMS = [
-  { name: 'Pano', image: '/images/farm/pano.png' },
-  { name: 'Chip', image: '/images/farm/chip.png' },
-  { name: 'Ferro de Solda', image: '/images/farm/ferro_de_solda.png' },
-  { name: 'Aço', image: '/images/farm/aco.png' },
-  { name: 'Plástico Processado', image: '/images/farm/plastico_processado.png' },
-  { name: 'Materiais Reciclados', image: '/images/farm/materiais_reciclados.png' },
-  { name: 'Cabo', image: '/images/farm/cabo.png' },
-  { name: 'Cinta', image: '/images/farm/cinta.png' },
-  { name: 'Borracha Processada', image: '/images/farm/borracha_processada.png' },
-  { name: 'Fibra de Carbono', image: '/images/farm/fibra_de_carbono.png' },
-  { name: 'Transponder', image: '/images/farm/transponder.png' },
-  { name: 'Alumínio Chapado', image: '/images/farm/aluminio_chapado.png' },
-  { name: 'Módulo ECU', image: '/images/farm/modulo_ecu.png' },
-  { name: 'Cobre Escovado', image: '/images/farm/cobre_escovado.png' },
+const FARM_GROUPS = [
+  {
+    title: 'Kit de Contrabando 1',
+    items: [
+      { name: 'Cinta', image: '/images/farm/cinta.png' },
+      { name: 'Pano', image: '/images/farm/pano.png' },
+      { name: 'Chip', image: '/images/farm/chip.png' },
+      { name: 'Cabo', image: '/images/farm/cabo.png' },
+      { name: 'Ferro de Solda', image: '/images/farm/ferro_de_solda.png' },
+      { name: 'Materiais Reciclados', image: '/images/farm/materiais_reciclados.png' },
+    ],
+  },
+  {
+    title: 'Kit de Contrabando 2',
+    items: [
+      { name: 'Módulo ECU', image: '/images/farm/modulo_ecu.png' },
+      { name: 'Fibra de Carbono', image: '/images/farm/fibra_de_carbono.png' },
+      { name: 'Alumínio Chapado', image: '/images/farm/aluminio_chapado.png' },
+      { name: 'Cobre Escovado', image: '/images/farm/cobre_escovado.png' },
+      { name: 'Plástico Processado', image: '/images/farm/plastico_processado.png' },
+      { name: 'Borracha Processada', image: '/images/farm/borracha_processada.png' },
+      { name: 'Transponder', image: '/images/farm/transponder.png' },
+      { name: 'Aço', image: '/images/farm/aco.png' },
+    ],
+  },
 ]
 
 export default function Farm() {
@@ -117,28 +127,39 @@ export default function Farm() {
   return (
     <>
       <PageHeader eyebrow="BAÚ" title="Farm" description="Informe os itens depositados no baú da organização." />
-      <div className="farm-grid">
-        {FARM_ITEMS.map(({ name, image }) => (
-          <div className="farm-card" key={name}>
-            <div className="farm-icon"><img src={image} alt={name} /></div>
-            <strong>{name}</strong>
-            <div className="qty-control">
-              <button type="button" onClick={() => change(name, -1)}><Minus size={15} /></button>
-              <input
-                type="number"
-                min="0"
-                step="1"
-                inputMode="numeric"
-                value={quantities[name] ?? 0}
-                onChange={event => setQuantity(name, event.target.value)}
-                onBlur={() => {
-                  if (quantities[name] === '') setQuantity(name, 0)
-                }}
-                aria-label={`Quantidade de ${name}`}
-              />
-              <button type="button" onClick={() => change(name, 1)}><Plus size={15} /></button>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+        {FARM_GROUPS.map(group => (
+          <section key={group.title}>
+            <div style={{ marginBottom: 12 }}>
+              <span className="eyebrow">CATEGORIA</span>
+              <h2 style={{ margin: '4px 0 0', fontSize: 18 }}>{group.title}</h2>
             </div>
-          </div>
+
+            <div className="farm-grid">
+              {group.items.map(({ name, image }) => (
+                <div className="farm-card" key={name}>
+                  <div className="farm-icon"><img src={image} alt={name} /></div>
+                  <strong>{name}</strong>
+                  <div className="qty-control">
+                    <button type="button" onClick={() => change(name, -1)}><Minus size={15} /></button>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      inputMode="numeric"
+                      value={quantities[name] ?? 0}
+                      onChange={event => setQuantity(name, event.target.value)}
+                      onBlur={() => {
+                        if (quantities[name] === '') setQuantity(name, 0)
+                      }}
+                      aria-label={`Quantidade de ${name}`}
+                    />
+                    <button type="button" onClick={() => change(name, 1)}><Plus size={15} /></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         ))}
       </div>
       <section className="panel farm-photo-panel">
