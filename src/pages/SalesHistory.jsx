@@ -30,7 +30,13 @@ export default function SalesHistory() {
                 <tr key={sale.id}>
                   <td>{dateTime(sale.createdAt)}</td>
                   <td>{sale.sellerName} <span className="muted">#{sale.sellerId}</span></td>
-                  <td><span className="badge">{sale.type}</span></td>
+                  <td>
+                    <span className="badge">
+                      {sale.type === 'PARCERIA' && sale.partnershipName
+                        ? `PARCERIA - ${sale.partnershipName}`
+                        : sale.type}
+                    </span>
+                  </td>
                   <td>{sale.items?.map(i => `${i.qty}x ${i.name}`).join(', ')}</td>
                   <td>{money(sale.total)}</td>
                   {isManagement(profile?.role) && <td><button className="icon-button danger-text" onClick={async () => { await removeRecord('sales', sale.id); load() }}><Trash2 size={17} /></button></td>}
