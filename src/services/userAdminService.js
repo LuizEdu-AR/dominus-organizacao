@@ -19,3 +19,5 @@ async function adminRequest(action, payload) {
 export const approveUser = (uid) => adminRequest('approve', { uid })
 export const changeUserRole = (uid, role) => adminRequest('change-role', { uid, role })
 export const dismissUser = (uid) => adminRequest('dismiss', { uid })
+
+export const updateUserByLeader = (uid, role, password) => adminRequest('leader-edit', { uid, role, password })

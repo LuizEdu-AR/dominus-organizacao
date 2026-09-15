@@ -316,3 +316,10 @@ tbody tr:hover { background: rgba(255,255,255,.018); }
   background: #0b0a0e;
 }
 
+
+/* Hierarquia: edição de cargo e redefinição de senha */
+.hierarchy-edit-modal { width: min(520px, 100%); }
+.hierarchy-edit-fields { display: grid; gap: 16px; margin-top: 18px; }
+.hierarchy-edit-fields label { display: grid; gap: 8px; }
+.hierarchy-password-block { display: grid; gap: 4px; padding-top: 16px; border-top: 1px solid var(--border); }
+.hierarchy-password-block .muted { font-size: 13px; }

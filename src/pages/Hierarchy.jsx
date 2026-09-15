@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Crown, Send, ShieldCheck, Trash2 } from 'lucide-react'
+import { Crown, Pencil, Send, ShieldCheck, Trash2 } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 import ConfirmModal from '../components/modais/ConfirmModal'
 import { useAuth } from '../context/AuthContext'
 import { getCollection } from '../services/dataService'
-import { approveUser, changeUserRole, dismissUser } from '../services/userAdminService'
+import { approveUser, dismissUser, updateUserByLeader } from '../services/userAdminService'
 import { sendDiscordEvent } from '../services/discordService'
 import { isLeader, isManagement, ROLE_LABELS } from '../utils/permissions'
 import { useToast } from '../components/toasts/ToastProvider'
@@ -24,6 +24,10 @@ export default function Hierarchy() {
   const { notify } = useToast()
   const [users, setUsers] = useState([])
   const [confirm, setConfirm] = useState(null)
+  const [editing, setEditing] = useState(null)
+  const [editRole, setEditRole] = useState('member')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [busyAction, setBusyAction] = useState(null)
 
   const load = async () => setUsers(await getCollection('users'))
@@ -37,11 +41,30 @@ export default function Hierarchy() {
     finally { setBusyAction(null) }
   }
 
-  async function role(uid, nextRole) {
+  function openEdit(user) {
+    setEditing(user)
+    setEditRole(user.role === 'pending' ? 'member' : user.role)
+    setNewPassword('')
+    setConfirmPassword('')
+  }
+
+  function closeEdit() {
     if (busyAction) return
-    setBusyAction(`role:${uid}`)
-    try { await changeUserRole(uid, nextRole); notify('Cargo atualizado.'); await load() }
-    catch (e) { notify(e.message, 'error') }
+    setEditing(null)
+    setNewPassword('')
+    setConfirmPassword('')
+  }
+
+  async function saveEdit() {
+    if (!editing || busyAction) return
+    if (newPassword && newPassword.length < 8) return notify('A senha deve possuir no mínimo 8 caracteres.', 'error')
+    if (newPassword !== confirmPassword) return notify('As senhas não coincidem.', 'error')
+    setBusyAction(`edit:${editing.uid}`)
+    try {
+      await updateUserByLeader(editing.uid, editRole, newPassword)
+      notify(newPassword ? 'Cargo e senha atualizados.' : 'Cargo atualizado.')
+      setEditing(null); setNewPassword(''); setConfirmPassword(''); await load()
+    } catch (e) { notify(e.message, 'error') }
     finally { setBusyAction(null) }
   }
 
@@ -84,18 +107,17 @@ export default function Hierarchy() {
                 <tr key={user.uid}>
                   <td><div className="member-name">{user.role === 'leader' ? <Crown size={16} /> : <ShieldCheck size={16} />}{user.name}</div></td>
                   <td>{user.id}</td>
-                  <td>
-                    {isLeader(profile?.role) && user.uid !== profile?.uid ? (
-                      <select value={user.role} onChange={e => role(user.uid, e.target.value)} disabled={user.status === 'pending'}>
-                        {roleOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                      </select>
-                    ) : ROLE_LABELS[user.role] || user.role}
-                  </td>
+                  <td>{ROLE_LABELS[user.role] || user.role}</td>
                   <td><span className={`status ${user.status}`}>{user.status === 'active' ? 'Ativo' : 'Pendente'}</span></td>
                   <td>
                     <div className="row-actions">
                       {user.status === 'pending' && isManagement(profile?.role) && (
                         <LoadingButton className="btn small" onClick={() => approve(user.uid)} loading={busyAction === `approve:${user.uid}`} disabled={Boolean(busyAction)} loadingText="Liberando...">Liberar acesso</LoadingButton>
+                      )}
+                      {user.uid !== profile?.uid && isLeader(profile?.role) && (
+                        <button className="icon-button" onClick={() => openEdit(user)} title="Editar usuário" disabled={Boolean(busyAction)}>
+                          <Pencil size={17} />
+                        </button>
                       )}
                       {user.uid !== profile?.uid &&
                         isManagement(profile?.role) &&
@@ -116,6 +138,23 @@ export default function Hierarchy() {
           </table>
         </div>
       </div>
+
+
+      {editing && (
+        <div className="modal-backdrop" onMouseDown={event => event.target === event.currentTarget && closeEdit()}>
+          <div className="modal-card hierarchy-edit-modal">
+            <h3>Editar usuário</h3>
+            <p className="muted">{editing.name} · ID {editing.id}</p>
+            <div className="hierarchy-edit-fields">
+              <label>Cargo<select value={editRole} onChange={event => setEditRole(event.target.value)} disabled={Boolean(busyAction)}>{roleOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+              <div className="hierarchy-password-block"><strong>Redefinir senha</strong><span className="muted">Deixe os campos vazios para manter a senha atual.</span></div>
+              <label>Nova senha<input type="password" value={newPassword} onChange={event => setNewPassword(event.target.value)} autoComplete="new-password" disabled={Boolean(busyAction)} /></label>
+              <label>Confirmar nova senha<input type="password" value={confirmPassword} onChange={event => setConfirmPassword(event.target.value)} autoComplete="new-password" disabled={Boolean(busyAction)} /></label>
+            </div>
+            <div className="modal-actions"><button className="btn ghost" onClick={closeEdit} disabled={Boolean(busyAction)}>Cancelar</button><LoadingButton className="btn primary" onClick={saveEdit} loading={busyAction === `edit:${editing.uid}`} loadingText="Salvando...">Salvar alterações</LoadingButton></div>
+          </div>
+        </div>
+      )}
 
       <ConfirmModal
         open={Boolean(confirm)}

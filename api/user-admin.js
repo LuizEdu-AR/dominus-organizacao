@@ -24,7 +24,7 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: 'Sem permissão.' })
     }
 
-    const { action, uid, role } = req.body || {}
+    const { action, uid, role, password } = req.body || {}
     if (!uid) return res.status(400).json({ error: 'UID obrigatório.' })
     if (uid === caller.uid && action === 'dismiss') return res.status(400).json({ error: 'Você não pode demitir a si mesmo.' })
 
@@ -43,6 +43,16 @@ export default async function handler(req, res) {
       if (caller.role !== 'leader') return res.status(403).json({ error: 'Apenas líderes podem alterar cargos.' })
       if (!validRoles.includes(role)) return res.status(400).json({ error: 'Cargo inválido.' })
       await userRef.update({ role, status: 'active' })
+      return res.status(200).json({ ok: true })
+    }
+
+    if (action === 'leader-edit') {
+      if (caller.role !== 'leader') return res.status(403).json({ error: 'Apenas líderes podem editar usuários.' })
+      if (uid === caller.uid) return res.status(400).json({ error: 'Use Meu perfil para alterar os seus próprios dados.' })
+      if (!validRoles.includes(role)) return res.status(400).json({ error: 'Cargo inválido.' })
+      if (password && password.length < 8) return res.status(400).json({ error: 'A senha deve possuir no mínimo 8 caracteres.' })
+      await userRef.update({ role, status: 'active' })
+      if (password) await adminAuth.updateUser(uid, { password })
       return res.status(200).json({ ok: true })
     }
 
