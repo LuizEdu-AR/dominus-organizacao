@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Trash2 } from 'lucide-react'
+import { Search, Trash2 } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 import Pagination from '../components/ui/Pagination'
 import { useAuth } from '../context/AuthContext'
@@ -11,16 +11,49 @@ export default function SalesHistory() {
   const { profile } = useAuth()
   const [sales, setSales] = useState([])
   const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
   const perPage = 8
 
   const load = async () => setSales(await getOrderedCollection('sales'))
   useEffect(() => { load() }, [])
-  const totalPages = Math.max(1, Math.ceil(sales.length / perPage))
-  const current = useMemo(() => sales.slice((page - 1) * perPage, page * perPage), [sales, page])
+  const filteredSales = useMemo(() => {
+    const term = search.trim().toLocaleLowerCase('pt-BR')
+    if (!term) return sales
+
+    return sales.filter(sale => {
+      const seller = `${sale.sellerName || ''} ${sale.sellerId || ''}`.toLocaleLowerCase('pt-BR')
+      const partnership = (sale.partnershipName || '').toLocaleLowerCase('pt-BR')
+      const formattedDate = dateTime(sale.createdAt).toLocaleLowerCase('pt-BR')
+
+      return seller.includes(term) || partnership.includes(term) || formattedDate.includes(term)
+    })
+  }, [sales, search])
+
+  const totalPages = Math.max(1, Math.ceil(filteredSales.length / perPage))
+  const current = useMemo(() => filteredSales.slice((page - 1) * perPage, page * perPage), [filteredSales, page])
+
+  useEffect(() => { setPage(1) }, [search])
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages)
+  }, [page, totalPages])
 
   return (
     <>
       <PageHeader eyebrow="REGISTROS" title="Histórico de vendas" description="Consulte os registros realizados pela equipe." />
+      <div className="history-toolbar">
+        <label className="history-search">
+          <Search size={18} />
+          <input
+            type="search"
+            value={search}
+            onChange={event => setSearch(event.target.value)}
+            placeholder="Pesquisar por usuário, parceria ou data..."
+            aria-label="Pesquisar histórico de vendas"
+          />
+        </label>
+        <span className="history-results">{filteredSales.length} registro(s)</span>
+      </div>
+
       <div className="panel">
         <div className="table-wrap">
           <table>
@@ -42,11 +75,18 @@ export default function SalesHistory() {
                   {isManagement(profile?.role) && <td><button className="icon-button danger-text" onClick={async () => { await removeRecord('sales', sale.id); load() }}><Trash2 size={17} /></button></td>}
                 </tr>
               ))}
+              {current.length === 0 && (
+                <tr>
+                  <td colSpan={isManagement(profile?.role) ? 6 : 5} className="history-empty">
+                    Nenhum registro encontrado para esta pesquisa.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </div>
-      <Pagination page={page} totalPages={totalPages} onChange={setPage} />
+      <Pagination page={page} totalPages={totalPages} onChange={setPage} compact showPageInput />
     </>
   )
 }
