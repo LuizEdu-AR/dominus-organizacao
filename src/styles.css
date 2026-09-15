@@ -333,3 +333,63 @@ tbody tr:hover { background: rgba(255,255,255,.018); }
   background: #0b0a0e;
 }
 
+
+/* Ajustes de layout: Registradora + Histórico de vendas */
+.sale-type-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.sale-type-segmented {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+}
+.sale-partnership-select {
+  flex: 0 1 310px;
+  width: 310px;
+  max-width: 100%;
+  gap: 6px;
+}
+.sale-partnership-select select {
+  width: 100%;
+  min-width: 0;
+}
+
+.history-search {
+  flex-direction: row;
+  align-items: center;
+}
+.history-search > svg {
+  flex: 0 0 auto;
+}
+.history-search input {
+  min-width: 0;
+}
+.pagination-jump {
+  flex-direction: row;
+  align-items: center;
+  white-space: nowrap;
+}
+.pagination-jump > span {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+}
+.pagination-jump input {
+  flex: 0 0 62px;
+}
+
+@media (max-width: 760px) {
+  .sale-type-row {
+    align-items: stretch;
+  }
+  .sale-partnership-select {
+    flex-basis: 100%;
+    width: 100%;
+  }
+  .pagination-jump {
+    order: initial;
+  }
+}
