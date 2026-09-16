@@ -15,6 +15,7 @@ import Profile from './pages/Profile'
 import PendingAccess from './pages/PendingAccess'
 import RegisterAction from './pages/RegisterAction'
 import Partnerships from './pages/Partnerships'
+import Production from './pages/Production'
 import { isManagement } from './utils/permissions'
 
 export default function App() {
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="/parcerias" element={<Partnerships />} />
         <Route path="/historico-vendas" element={isManagement(profile?.role) ? <SalesHistory /> : <Navigate to="/" replace />} />
         <Route path="/farm" element={<Farm />} />
+        <Route path="/producao" element={<Production />} />
         <Route path="/historico-farm" element={isManagement(profile?.role) ? <FarmHistory /> : <Navigate to="/" replace />} />
         <Route path="/registro-de-acao" element={<RegisterAction />} />
         <Route path="/avisos" element={<Notices />} />

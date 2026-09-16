@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   Bell, Boxes, ChevronRight, CircleDollarSign, ClipboardList, Crown, Handshake,
-  Home, LogOut, Menu, PackageOpen, ScrollText, Swords, UserRound, Users, X
+  Factory, Home, LogOut, Menu, PackageOpen, ScrollText, Swords, UserRound, Users, X
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { logoutUser } from '../../services/authService'
@@ -17,6 +17,7 @@ const links = [
   ['/parcerias', 'Parcerias', Handshake],
   ['/historico-vendas', 'Histórico de vendas', ScrollText],
   ['/farm', 'Farm', Boxes],
+  ['/producao', 'Produção', Factory],
   ['/historico-farm', 'Histórico de farm', PackageOpen],
   ['/registro-de-acao', 'Registro de Ação', Swords],
   ['/avisos', 'Quadro de avisos', Bell],
