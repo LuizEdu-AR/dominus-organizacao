@@ -8,11 +8,20 @@ import { isLeader } from '../utils/permissions'
 import { useToast } from '../components/toasts/ToastProvider'
 
 const EMPTY_FORM = {
+  type: 'organization',
   name: '',
   chat: '',
   chatPassword: '',
   product: '',
 }
+
+const PARTNERSHIP_TYPES = {
+  organization: 'Organização',
+  fraternity: 'Fraternidade',
+}
+
+const getPartnershipType = partnership =>
+  partnership?.type === 'fraternity' ? 'fraternity' : 'organization'
 
 export default function Partnerships() {
   const { profile } = useAuth()
@@ -23,6 +32,7 @@ export default function Partnerships() {
   const [editingId, setEditingId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
+  const [filter, setFilter] = useState('all')
 
   async function load() {
     try {
@@ -46,6 +56,7 @@ export default function Partnerships() {
   function edit(partnership) {
     setEditingId(partnership.id)
     setForm({
+      type: getPartnershipType(partnership),
       name: partnership.name || '',
       chat: partnership.chat || '',
       chatPassword: partnership.chatPassword || '',
@@ -63,6 +74,7 @@ export default function Partnerships() {
     setBusy(true)
     try {
       const payload = {
+        type: form.type,
         name: form.name.trim(),
         chat: form.chat.trim(),
         chatPassword: form.chatPassword.trim(),
@@ -108,7 +120,7 @@ export default function Partnerships() {
       <PageHeader
         eyebrow="COMERCIAL"
         title="Parcerias"
-        description="Consulte as organizações parceiras, seus chats, senhas e produtos comercializados."
+        description="Consulte organizações e fraternidades parceiras, seus chats, senhas e produtos comercializados."
       />
 
       {leader && (
@@ -117,8 +129,9 @@ export default function Partnerships() {
             <h3>{editingId ? 'Editar parceria' : 'Nova parceria'}</h3>
             {editingId && <button type="button" className="btn ghost small" onClick={resetForm}><X size={15} /> Cancelar edição</button>}
           </div>
-          <div className="partnership-form-grid">
-            <label>Organização<input value={form.name} onChange={event => setForm(current => ({ ...current, name: event.target.value }))} placeholder="Nome da organização" /></label>
+          <div className="partnership-form-grid partnership-form-grid-with-type">
+            <label>Tipo de parceria<select value={form.type} onChange={event => setForm(current => ({ ...current, type: event.target.value }))}><option value="organization">Organização</option><option value="fraternity">Fraternidade</option></select></label>
+            <label>{PARTNERSHIP_TYPES[form.type]}<input value={form.name} onChange={event => setForm(current => ({ ...current, name: event.target.value }))} placeholder={`Nome da ${PARTNERSHIP_TYPES[form.type].toLowerCase()}`} /></label>
             <label>Chat<input value={form.chat} onChange={event => setForm(current => ({ ...current, chat: event.target.value }))} placeholder="Chat da parceria" /></label>
             <label>Senha do chat<input value={form.chatPassword} onChange={event => setForm(current => ({ ...current, chatPassword: event.target.value }))} placeholder="Senha" /></label>
             <label>Produto que vende<input value={form.product} onChange={event => setForm(current => ({ ...current, product: event.target.value }))} placeholder="Produto comercializado" /></label>
@@ -127,6 +140,14 @@ export default function Partnerships() {
             </LoadingButton>
           </div>
         </section>
+      )}
+
+      {!loading && partnerships.length > 0 && (
+        <div className="partnership-filter" role="group" aria-label="Filtrar parcerias">
+          <button type="button" className={filter === 'all' ? 'active' : ''} onClick={() => setFilter('all')}>Todas</button>
+          <button type="button" className={filter === 'organization' ? 'active' : ''} onClick={() => setFilter('organization')}>Organizações</button>
+          <button type="button" className={filter === 'fraternity' ? 'active' : ''} onClick={() => setFilter('fraternity')}>Fraternidades</button>
+        </div>
       )}
 
       {loading ? (
@@ -139,11 +160,11 @@ export default function Partnerships() {
         </div>
       ) : (
         <div className="partnership-grid">
-          {partnerships.map(partnership => (
-            <article className="partnership-card" key={partnership.id}>
+          {partnerships.filter(partnership => filter === 'all' || getPartnershipType(partnership) === filter).map(partnership => (
+            <article className={`partnership-card partnership-card-${getPartnershipType(partnership)}`} key={partnership.id}>
               <div className="partnership-card-head">
                 <div className="partnership-icon"><Handshake size={20} /></div>
-                <div><span className="eyebrow">PARCERIA ATIVA</span><h3>{partnership.name}</h3></div>
+                <div><span className="eyebrow">PARCERIA • {PARTNERSHIP_TYPES[getPartnershipType(partnership)].toUpperCase()}</span><h3>{partnership.name}</h3></div>
                 {leader && (
                   <div className="row-actions partnership-actions">
                     <button className="icon-button" onClick={() => edit(partnership)} title="Editar"><Pencil size={16} /></button>

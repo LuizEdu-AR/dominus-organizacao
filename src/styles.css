@@ -285,6 +285,7 @@ tbody tr:hover { background: rgba(255,255,255,.018); }
 /* Parcerias */
 .partnership-editor { margin-bottom: 20px; }
 .partnership-form-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) auto; gap: 12px; align-items: end; }
+.partnership-form-grid-with-type { grid-template-columns: minmax(170px, .7fr) repeat(4, minmax(0, 1fr)) auto; }
 .partnership-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .partnership-card { background: linear-gradient(145deg, rgba(111,45,189,.08), var(--panel) 42%); border: 1px solid var(--border); border-radius: 16px; padding: 18px; }
 .partnership-card-head { display: grid; grid-template-columns: 42px 1fr auto; align-items: center; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
@@ -296,16 +297,29 @@ tbody tr:hover { background: rgba(255,255,255,.018); }
 .partnership-info span { color: var(--muted); }
 .partnership-info strong { text-align: right; overflow-wrap: anywhere; }
 .partnership-loading { min-height: 240px; }
+.partnership-filter { display: inline-flex; gap: 4px; margin: 0 0 16px; padding: 4px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); }
+.partnership-filter button { min-height: 36px; padding: 0 15px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); font: inherit; font-weight: 700; cursor: pointer; }
+.partnership-filter button:hover { color: var(--text); }
+.partnership-filter button.active { background: var(--primary); color: #fff; }
+.partnership-card-organization { border-color: rgba(212,175,55,.25); }
+.partnership-card-organization .partnership-icon { color: var(--gold-2); background: rgba(212,175,55,.08); }
+.partnership-card-organization .eyebrow { color: var(--gold-2); }
+.partnership-card-fraternity { border-color: rgba(155,92,255,.38); background: linear-gradient(145deg, rgba(139,75,225,.12), var(--panel) 42%); }
+.partnership-card-fraternity .partnership-icon { color: #b98aff; background: rgba(139,75,225,.16); }
+.partnership-card-fraternity .eyebrow { color: #b98aff; }
 .sale-partnership-panel { display: grid; grid-template-columns: minmax(260px, 420px) 1fr; gap: 14px 22px; align-items: end; margin-bottom: 18px; }
 .sale-partnership-details { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; color: var(--muted); font-size: 13px; padding-bottom: 10px; }
 .sale-partnership-details strong { color: #fff; }
 
 @media (max-width: 1050px) {
   .partnership-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .partnership-form-grid-with-type { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .partnership-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 760px) {
-  .partnership-form-grid, .sale-partnership-panel { grid-template-columns: 1fr; }
+  .partnership-form-grid, .partnership-form-grid-with-type, .sale-partnership-panel { grid-template-columns: 1fr; }
+  .partnership-filter { display: flex; width: 100%; overflow-x: auto; }
+  .partnership-filter button { flex: 1 0 auto; }
   .partnership-card-head { grid-template-columns: 42px 1fr; }
   .partnership-actions { grid-column: 1 / -1; }
   .partnership-info { flex-direction: column; gap: 4px; }
