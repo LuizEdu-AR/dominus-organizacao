@@ -88,7 +88,8 @@ export default function ProtectedLayout() {
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="brand">
           <img src="/images/dominus-logo-v2.png" alt="Dominus" />
-          <div><strong>DOMINUS</strong><span>Organização</span></div>
+          <div className="brand-copy"><strong>DOMINUS</strong><span>Organização</span></div>
+          <NotificationCenter />
           <button type="button" className="mobile-menu-close" onClick={() => setSidebarOpen(false)} aria-label="Fechar menu"><X size={21} /></button>
         </div>
 
@@ -114,7 +115,7 @@ export default function ProtectedLayout() {
         </div>
       </aside>
 
-      <main className="main-content"><NotificationCenter /><Outlet /></main>
+      <main className="main-content"><Outlet /></main>
     </div>
   )
 }
