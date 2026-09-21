@@ -7,6 +7,7 @@ import {
 import { useAuth } from '../../context/AuthContext'
 import { logoutUser } from '../../services/authService'
 import { isApproved, isManagement, ROLE_LABELS } from '../../utils/permissions'
+import NotificationCenter from '../notifications/NotificationCenter'
 import './ProtectedLayout.css'
 
 const groups = [
@@ -113,7 +114,7 @@ export default function ProtectedLayout() {
         </div>
       </aside>
 
-      <main className="main-content"><Outlet /></main>
+      <main className="main-content"><NotificationCenter /><Outlet /></main>
     </div>
   )
 }

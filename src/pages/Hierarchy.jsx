@@ -9,6 +9,7 @@ import { sendDiscordEvent } from '../services/discordService'
 import { isLeader, isManagement, ROLE_LABELS } from '../utils/permissions'
 import { useToast } from '../components/toasts/ToastProvider'
 import LoadingButton from '../components/ui/LoadingButton'
+import { createNotification } from '../services/notificationService'
 
 const roleOptions = [
   ['member', 'Membro'],
@@ -36,7 +37,13 @@ export default function Hierarchy() {
   async function approve(uid) {
     if (busyAction) return
     setBusyAction(`approve:${uid}`)
-    try { await approveUser(uid); notify('Acesso liberado.'); await load() }
+    try {
+      await approveUser(uid)
+      const approvedUser = users.find(user => user.uid === uid)
+      await createNotification({ title: 'Acesso liberado', message: 'Seu acesso à Dominus foi aprovado.', type: 'role', link: '/', audience: 'individual', targetUid: uid, authorUid: profile.uid })
+      notify(`Acesso de ${approvedUser?.name || 'usuário'} liberado.`)
+      await load()
+    }
     catch (e) { notify(e.message, 'error') }
     finally { setBusyAction(null) }
   }
@@ -61,7 +68,9 @@ export default function Hierarchy() {
     if (newPassword !== confirmPassword) return notify('As senhas não coincidem.', 'error')
     setBusyAction(`edit:${editing.uid}`)
     try {
+      const roleChanged = editing.role !== editRole
       await updateUserByLeader(editing.uid, editRole, newPassword)
+      if (roleChanged) await createNotification({ title: 'Cargo atualizado', message: `Seu novo cargo é ${ROLE_LABELS[editRole] || editRole}.`, type: 'role', link: '/perfil', audience: 'individual', targetUid: editing.uid, authorUid: profile.uid })
       notify(newPassword ? 'Cargo e senha atualizados.' : 'Cargo atualizado.')
       setEditing(null); setNewPassword(''); setConfirmPassword(''); await load()
     } catch (e) { notify(e.message, 'error') }

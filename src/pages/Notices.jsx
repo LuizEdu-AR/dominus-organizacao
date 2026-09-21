@@ -9,6 +9,7 @@ import { isManagement } from '../utils/permissions'
 import { useToast } from '../components/toasts/ToastProvider'
 import LoadingButton from '../components/ui/LoadingButton'
 import { uploadImage } from '../services/imageUploadService'
+import { createNotification } from '../services/notificationService'
 
 export default function Notices() {
   const { profile } = useAuth()
@@ -75,6 +76,7 @@ export default function Notices() {
       }
 
       await addRecord('notices', record)
+      await createNotification({ title: 'Novo aviso', message: form.title.trim(), type: 'notice', link: '/avisos', audience: 'global', authorUid: profile.uid })
 
       try {
         await sendDiscordEvent('notice', record)

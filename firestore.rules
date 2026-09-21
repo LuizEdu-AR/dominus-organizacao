@@ -97,5 +97,19 @@ service cloud.firestore {
         && request.resource.data.authorUid == request.auth.uid;
       allow update, delete: if management();
     }
+
+    match /notifications/{notificationId} {
+      allow read: if approved()
+        && (resource.data.audience == "global" || resource.data.targetUid == request.auth.uid);
+      allow create: if management()
+        && request.resource.data.authorUid == request.auth.uid
+        && request.resource.data.audience in ["global", "individual"];
+      allow update, delete: if false;
+    }
+
+    match /users/{uid}/notificationReads/{notificationId} {
+      allow read, create, update: if signedIn() && request.auth.uid == uid;
+      allow delete: if false;
+    }
   }
 }

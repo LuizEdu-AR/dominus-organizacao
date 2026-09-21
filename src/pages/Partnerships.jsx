@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import { addRecord, getCollection, removeRecord, setRecord } from '../services/dataService'
 import { isLeader } from '../utils/permissions'
 import { useToast } from '../components/toasts/ToastProvider'
+import { createNotification } from '../services/notificationService'
 
 const EMPTY_FORM = {
   type: 'organization',
@@ -86,6 +87,7 @@ export default function Partnerships() {
         notify('Parceria atualizada.')
       } else {
         await addRecord('partnerships', payload)
+        await createNotification({ title: 'Nova parceria', message: `${PARTNERSHIP_TYPES[form.type]} ${form.name.trim()} foi adicionada.`, type: 'partnership', link: '/parcerias', audience: 'global', authorUid: profile.uid })
         notify('Parceria adicionada.')
       }
 
