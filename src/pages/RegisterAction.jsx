@@ -99,7 +99,7 @@ export default function RegisterAction() {
 
   return (
     <>
-      <PageHeader eyebrow="OPERAÇÕES" title="Registro de Ação" description="Registre as informações da ação e envie o relatório para o Discord." />
+      <PageHeader eyebrow="OPERAÇÕES" title="Ações" description="Registre as informações da ação e envie o relatório para o Discord." />
 
       <section className="panel form-panel action-form-panel">
         <div className="action-form-title"><Swords size={20} /><h3>Novo registro</h3></div>

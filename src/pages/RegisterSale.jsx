@@ -181,7 +181,7 @@ export default function RegisterSale() {
     <>
       <PageHeader
         eyebrow="VENDAS"
-        title="Registradora"
+        title="Vendas"
         description="Monte a venda, alterne entre Pista e Parceria e finalize o registro."
       />
 

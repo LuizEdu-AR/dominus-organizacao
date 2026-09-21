@@ -128,3 +128,9 @@
     transition: none;
   }
 }
+
+@media (max-width: 760px) {
+  .sidebar nav { display: flex !important; flex-direction: column; gap: 14px !important; }
+  .nav-group { width: 100%; }
+  .nav-group-links { display: flex; flex-direction: column; gap: 3px; }
+}

@@ -93,7 +93,7 @@ export default function Notices() {
 
   return (
     <>
-      <PageHeader eyebrow="COMUNICAÇÃO" title="Quadro de avisos" description="Comunicados importantes para todos os membros." />
+      <PageHeader eyebrow="COMUNICAÇÃO" title="Avisos" description="Comunicados importantes para todos os membros." />
       {isManagement(profile?.role) && (
         <div className="panel form-panel">
           <h3>Novo aviso</h3>

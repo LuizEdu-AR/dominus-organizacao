@@ -33,7 +33,7 @@ export default function Profile() {
 
   return (
     <>
-      <PageHeader eyebrow="CONTA" title="Meu perfil" description="Seu ID é permanente e não pode ser alterado." />
+      <PageHeader eyebrow="CONTA" title="Meu Perfil" description="Seu ID é permanente e não pode ser alterado." />
       <div className="profile-grid">
         <div className="panel profile-card">
           <img src="/images/dominus-logo-v2.png" alt="" />

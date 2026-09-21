@@ -24,6 +24,11 @@ export async function getOrderedCollection(name, field = 'createdAt', max = 500)
   return snap.docs.map(d => ({ id: d.id, ...d.data() }))
 }
 
+export async function getAllOrderedCollection(name, field = 'createdAt') {
+  const snap = await getDocs(query(collection(db, name), orderBy(field, 'desc')))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+}
+
 export async function getRecord(name, id) {
   const snap = await getDoc(doc(db, name, id))
   return snap.exists() ? { id: snap.id, ...snap.data() } : null

@@ -39,7 +39,7 @@ export default function SalesHistory() {
 
   return (
     <>
-      <PageHeader eyebrow="REGISTROS" title="Histórico de vendas" description="Consulte os registros realizados pela equipe." />
+      <PageHeader eyebrow="REGISTROS" title="Histórico de Vendas" description="Consulte os registros realizados pela equipe." />
       <div className="history-toolbar">
         <label className="history-search">
           <Search size={18} />

@@ -93,7 +93,7 @@ export default function Hierarchy() {
     <>
       <PageHeader
         eyebrow="ORGANIZAÇÃO"
-        title="Hierarquia"
+        title="Membros"
         description="Gerencie acessos e acompanhe a estrutura atual da Dominus."
         actions={isLeader(profile?.role) && <LoadingButton className="btn primary" onClick={sendHierarchy} loading={busyAction === 'hierarchy'} disabled={Boolean(busyAction)} loadingText="Enviando..."><Send size={16} /> Enviar ao Discord</LoadingButton>}
       />

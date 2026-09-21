@@ -304,7 +304,7 @@ export default function Prices() {
       `}</style>
       <PageHeader
         eyebrow="COMERCIAL"
-        title="Tabela de preços"
+        title="Preços"
         description="Valores, regras de parceria e configurações comerciais da Dominus."
       />
 

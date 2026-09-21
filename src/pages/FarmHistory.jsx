@@ -20,7 +20,7 @@ export default function FarmHistory() {
 
   return (
     <>
-      <PageHeader eyebrow="REGISTROS" title="Histórico de farm" description="Depósitos realizados no baú da organização." />
+      <PageHeader eyebrow="REGISTROS" title="Histórico de Farm" description="Depósitos realizados no baú da organização." />
       <div className="panel">
         <div className="table-wrap">
           <table>
