@@ -30,7 +30,7 @@ export default function Register() {
   return (
     <div className="auth-screen">
       <div className="auth-card">
-        <img className="auth-logo" src="/images/dominus-logo.png" alt="Dominus" />
+        <img className="auth-logo" src="/images/dominus-logo-v2.png" alt="Dominus" />
         <span className="eyebrow">NOVO MEMBRO</span>
         <h1>Criar conta</h1>
         <p>Após o cadastro, um Líder ou Gerente deverá liberar seu acesso.</p>
