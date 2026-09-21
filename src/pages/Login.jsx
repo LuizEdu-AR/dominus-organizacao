@@ -26,7 +26,7 @@ export default function Login() {
   return (
     <div className="auth-screen">
       <div className="auth-card">
-        <img className="auth-logo" src="/images/dominus-logo.png" alt="Dominus" />
+        <img className="auth-logo" src="/images/dominus-logo-v2.png" alt="Dominus" />
         <span className="eyebrow">ACESSO RESTRITO</span>
         <h1>DOMINUS</h1>
         <p>Organização, disciplina e controle em um único painel.</p>
