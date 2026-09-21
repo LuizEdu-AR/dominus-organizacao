@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { BarChart3, Boxes, CircleDollarSign, PackageCheck, ReceiptText, Users } from 'lucide-react'
+import { BarChart3, Boxes, CircleDollarSign, PackageCheck, ReceiptText } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 import { getAllOrderedCollection } from '../services/dataService'
 import { money } from '../utils/formatters'
@@ -154,7 +154,7 @@ export default function Reports() {
         <article className="report-kpi"><BarChart3 size={20} /><span>Depósito da organização</span><strong>{money(report.factionFee)}</strong></article>
         <article className="report-kpi"><PackageCheck size={20} /><span>Itens vendidos</span><strong>{report.soldItemsCount.toLocaleString('pt-BR')}</strong></article>
         <article className="report-kpi"><Boxes size={20} /><span>Registros de Farm</span><strong>{report.farmCount.toLocaleString('pt-BR')}</strong></article>
-        <article className="report-kpi"><Users size={20} /><span>Itens de Farm</span><strong>{report.farmItemsCount.toLocaleString('pt-BR')}</strong></article>
+        <article className="report-kpi"><PackageCheck size={20} /><span>Itens de Farm</span><strong>{report.farmItemsCount.toLocaleString('pt-BR')}</strong></article>
       </div>
 
       <div className="report-two-columns">
