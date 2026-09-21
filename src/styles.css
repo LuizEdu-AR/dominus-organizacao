@@ -827,3 +827,17 @@ tbody tr:hover { background: rgba(255,255,255,.018); }
   }
 }
 
+
+/* Scroll invisível: mantém a rolagem sem exibir a barra */
+.sidebar nav,
+.report-ranking {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sidebar nav::-webkit-scrollbar,
+.report-ranking::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
