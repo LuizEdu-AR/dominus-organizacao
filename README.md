@@ -58,7 +58,7 @@ Painel administrativo da **Dominus**, desenvolvido em React + Vite e integrado a
 - Perfil com alteração de nome e senha
 - Controle de acesso conforme cargo
 
-### Hierarquia
+### Membros / Hierarquia
 
 Cargos disponíveis:
 
@@ -71,7 +71,7 @@ Cargos disponíveis:
 
 A hierarquia pode ser enviada ao Discord através de webhook e é exibida separada por cargos.
 
-### Tabela de preços
+### Preços
 
 - Produtos separados por categoria
 - Preço de pista
@@ -83,7 +83,7 @@ A hierarquia pode ser enviada ao Discord através de webhook e é exibida separa
 - Reordenação dos produtos por arrastar e soltar
 - A ordem dos produtos é persistida no Firestore através do campo `order`
 
-### Registradora
+### Vendas
 
 - Venda do tipo **Pista** ou **Parceria**
 - Quantidade digitável e controles `+` / `-`
@@ -153,7 +153,7 @@ dominus/farm
 - Exclusão disponível para a gestão
 - O histórico permanece no Firestore mesmo após a remoção automática da imagem antiga do Cloudinary
 
-### Registro de Ação
+### Ações
 
 Campos disponíveis:
 
@@ -183,14 +183,97 @@ As imagens anexadas aos registros de ação ficam em:
 dominus/actions
 ```
 
-### Quadro de avisos
+### Avisos
 
 - Líderes e Gerentes podem publicar avisos
 - Membros aprovados podem visualizar os avisos
+- Suporte a imagem por arquivo ou **CTRL + V**
+- Imagens armazenadas no Cloudinary
+- Publicação integrada ao Discord
+- Novos avisos podem gerar notificações internas para os usuários
+
+### Parcerias
+
+- Cadastro, edição e exclusão por Líderes
+- Tipos de parceria: **Organização** e **Fraternidade**
+- Identificação visual diferente para cada tipo
+- Filtros por tipo de parceria
+- Parcerias integradas ao fluxo de vendas
+- Registros antigos sem tipo definido continuam compatíveis como Organização
+
+### Produção
+
+- Calculadora de materiais necessários para produção
+- Produtos com imagens próprias
+- Cálculo realizado por stacks obrigatórios de fabricação
+- Arredondamento automático para a quantidade mínima de stacks necessária
+- Resumo dos materiais totais exigidos
+- Utiliza os mesmos nomes de materiais cadastrados no Farm
+- Não grava dados no Firestore e não envia registros ao Discord
+
+### Relatórios
+
+Área disponível para **Líderes e Gerentes**.
+
+- Total de vendas e valor vendido
+- Total destinado ao depósito da organização
+- Quantidade de itens vendidos
+- Quantidade de registros e itens de Farm
+- Quantidade vendida por produto
+- Quantidade farmada por material
+- Resumo por usuário
+- Filtros por período e usuário
+- Utiliza os registros históricos existentes no Firestore
+
+### Central de notificações
+
+- Sino de notificações integrado ao cabeçalho da barra lateral
+- Contador individual de notificações não lidas
+- Painel rápido com notificações recentes
+- Página completa em `/notificacoes`
+- Filtros de todas e não lidas
+- Opção para marcar todas como lidas
+- Estado de leitura individual para cada usuário
+- Atualização em tempo real pelo Firestore
+- Clique na notificação pode direcionar para a área relacionada
+- Notificações automáticas para eventos como novos avisos, novas parcerias, alteração de cargo e liberação de acesso
+
+As notificações lidas permanecem no histórico; apenas deixam de contar como não lidas.
+
+## Navegação atual
+
+A barra lateral é organizada por grupos:
+
+```text
+GERAL
+  Início
+  Membros
+
+COMERCIAL
+  Preços
+  Vendas
+  Histórico de Vendas
+  Parcerias
+
+OPERAÇÕES
+  Produção
+  Farm
+  Histórico de Farm
+  Ações
+
+GESTÃO
+  Avisos
+  Relatórios
+
+CONTA
+  Meu Perfil
+```
+
+A Central de Notificações é acessada pelo sino no cabeçalho da barra lateral e não ocupa um item próprio no menu.
 
 ## Cloudinary
 
-O Cloudinary é utilizado para armazenar os comprovantes de Farm e as imagens anexadas aos Registros de Ação.
+O Cloudinary é utilizado para armazenar os comprovantes de Farm e as imagens anexadas aos Registros de Ação e Avisos.
 
 Configure no ambiente:
 
@@ -204,7 +287,7 @@ O `CLOUDINARY_API_SECRET` deve permanecer somente no backend e nunca deve ser ex
 
 ### Limpeza automática
 
-O projeto possui uma rotina automática para remover do Cloudinary imagens de Farm e Registro de Ação com mais de **30 dias**.
+O projeto possui uma rotina automática para remover do Cloudinary imagens de Farm, Registro de Ação e Avisos antigas, conforme a política de retenção configurada no projeto.
 
 A rotina:
 
@@ -239,6 +322,8 @@ DISCORD_ACTIONS_WEBHOOK=
 
 DISCORD_SALES_WEBHOOK_SECONDARY=
 DISCORD_ACTIONS_WEBHOOK_SECONDARY=
+DISCORD_NOTICES_WEBHOOK=
+DISCORD_NOTICES_ROLE_ID=
 ```
 
 Vendas e Registros de Ação podem ser enviados simultaneamente para dois servidores/canais diferentes.
@@ -278,6 +363,9 @@ ou utilizada diretamente da aplicação:
 - `farms`
 - `actions`
 - `notices`
+- `partnerships`
+- `notifications`
+- `notificationReads`
 - `settings`
 
 A taxa da facção fica armazenada em:
