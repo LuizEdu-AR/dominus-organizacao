@@ -39,10 +39,8 @@ function toDate(value) {
 
 function startOfWeek() {
   const now = new Date()
-  const day = now.getDay()
-  const diff = day === 0 ? 6 : day - 1
   const start = new Date(now)
-  start.setDate(now.getDate() - diff)
+  start.setDate(now.getDate() - now.getDay())
   start.setHours(0, 0, 0, 0)
   return start
 }
