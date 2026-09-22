@@ -215,7 +215,7 @@ export default function Home() {
       <section className="home-about">
         <div className="home-about-copy">
           <span className="eyebrow">SOBRE A DOMINUS</span>
-          <h2>Poder. Organização. Luxo. Autoridade.</h2>
+          <h2>Poder. Organização. Luxo. Amizade.</h2>
           <p>A Dominus é uma organização construída sobre estrutura, compromisso e união. Cada membro desempenha seu papel dentro de uma hierarquia organizada, contribuindo para o crescimento e fortalecimento da organização.</p>
           <div className="home-values">
             <div><ShieldCheck size={19} /><strong>Organização</strong><span>Estrutura, responsabilidade e funções bem definidas.</span></div>
