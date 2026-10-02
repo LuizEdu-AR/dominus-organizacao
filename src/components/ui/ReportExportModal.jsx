@@ -26,7 +26,7 @@ function slug(value) { return String(value || '').normalize('NFD').replace(/[\u0
 export default function ReportExportModal({ open, onClose, sales, farms, users, partnerships }) {
   const now = new Date()
   const [dataType, setDataType] = useState('sales')
-  const [periodType, setPeriodType] = useState('week')
+  const [periodType, setPeriodType] = useState('all')
   const [month, setMonth] = useState(now.getMonth())
   const [year, setYear] = useState(now.getFullYear())
   const [day, setDay] = useState(isoDate(now))
@@ -43,6 +43,9 @@ export default function ReportExportModal({ open, onClose, sales, farms, users, 
   }, [sales, farms])
 
   const period = useMemo(() => {
+    if (periodType === 'all') {
+      return { start: null, end: null, label: 'Todo o histórico', file: 'todo-historico' }
+    }
     if (periodType === 'week') {
       const start = new Date(now); start.setHours(0,0,0,0); start.setDate(start.getDate() - start.getDay())
       return { start, end: now, label: `${brDate(start)} → ${brDate(now)}`, file: `semana-atual_${isoDate(now)}` }
@@ -66,7 +69,9 @@ export default function ReportExportModal({ open, onClose, sales, farms, users, 
     const prefix = dataType === 'sales' ? 'seller' : 'member'
     return source.filter(record => {
       const date = toDate(record.createdAt)
-      if (!date || date < period.start || date > period.end) return false
+      if (!date) return false
+      if (period.start && date < period.start) return false
+      if (period.end && date > period.end) return false
       if (selectedUser !== 'all' && userKey(record, prefix) !== selectedUser) return false
       if (dataType === 'sales') {
         if (selectedPartnership !== 'all' && record.partnershipName !== selectedPartnership) return false
@@ -118,7 +123,8 @@ export default function ReportExportModal({ open, onClose, sales, farms, users, 
     <div className="modal-card report-export-modal">
       <div className="report-export-head"><div><h3>Exportar relatório</h3><p className="muted">Configure os dados que deseja exportar em CSV.</p></div><button className="icon-button" onClick={onClose}><X size={18}/></button></div>
       <div className="report-export-section"><span className="report-export-label">Tipo de dados</span><div className="report-export-tabs"><button className={dataType==='sales'?'active':''} onClick={()=>setDataType('sales')}>Vendas</button><button className={dataType==='farms'?'active':''} onClick={()=>setDataType('farms')}>Farm</button></div></div>
-      <div className="report-export-section"><span className="report-export-label">Período</span><div className="report-export-tabs four"><button className={periodType==='week'?'active':''} onClick={()=>setPeriodType('week')}>Semana atual</button><button className={periodType==='month'?'active':''} onClick={()=>setPeriodType('month')}>Mês</button><button className={periodType==='day'?'active':''} onClick={()=>setPeriodType('day')}>Dia</button><button className={periodType==='range'?'active':''} onClick={()=>setPeriodType('range')}>Período</button></div>
+      <div className="report-export-section"><span className="report-export-label">Período</span><div className="report-export-tabs five"><button className={periodType==='all'?'active':''} onClick={()=>setPeriodType('all')}>Tudo</button><button className={periodType==='week'?'active':''} onClick={()=>setPeriodType('week')}>Semana atual</button><button className={periodType==='month'?'active':''} onClick={()=>setPeriodType('month')}>Mês</button><button className={periodType==='day'?'active':''} onClick={()=>setPeriodType('day')}>Dia</button><button className={periodType==='range'?'active':''} onClick={()=>setPeriodType('range')}>Período</button></div>
+        {periodType==='all' && <div className="report-period-preview">Todo o histórico • todos os registros disponíveis</div>}
         {periodType==='week' && <div className="report-period-preview">{period.label}</div>}
         {periodType==='month' && <div className="report-export-grid"><label>Mês<select value={month} onChange={e=>setMonth(Number(e.target.value))}>{MONTHS.map((m,i)=><option key={m} value={i}>{m}</option>)}</select></label><label>Ano<select value={year} onChange={e=>setYear(Number(e.target.value))}>{years.map(y=><option key={y}>{y}</option>)}</select></label></div>}
         {periodType==='day' && <label>Data<input type="date" value={day} onChange={e=>setDay(e.target.value)}/></label>}

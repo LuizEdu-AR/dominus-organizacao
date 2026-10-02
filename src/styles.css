@@ -1150,7 +1150,8 @@ tbody tr:hover { background: rgba(255,255,255,.018); }
 /* Exportação CSV dos relatórios */
 .report-export-button { white-space: nowrap; }
 .report-export-backdrop { z-index: 10020; }
-.report-export-modal { width: min(680px, 100%); max-height: min(88vh, 820px); overflow-y: auto; }
+.report-export-modal { width: min(680px, 100%); max-height: min(88vh, 820px); overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
+.report-export-modal::-webkit-scrollbar { display: none; }
 .report-export-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .report-export-head h3 { margin: 0 0 5px; }
 .report-export-head p { margin: 0; }
@@ -1158,6 +1159,7 @@ tbody tr:hover { background: rgba(255,255,255,.018); }
 .report-export-label { color: #cfc8d8; font-size: 11px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
 .report-export-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
 .report-export-tabs.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.report-export-tabs.five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .report-export-tabs button { min-height: 38px; border: 1px solid var(--border); border-radius: 9px; background: rgba(255,255,255,.018); color: var(--muted); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; transition: .18s ease; }
 .report-export-tabs button:hover { border-color: rgba(124,58,237,.48); color: #fff; }
 .report-export-tabs button.active { color: #fff; border-color: rgba(124,58,237,.72); background: rgba(124,58,237,.14); }
@@ -1169,7 +1171,7 @@ tbody tr:hover { background: rgba(255,255,255,.018); }
 .report-export-preview span { color: var(--muted); font-size: 11px; font-weight: 700; }
 .report-export-preview strong { color: #fff; font-size: 15px; }
 @media (max-width: 620px) {
-  .report-export-tabs.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .report-export-tabs.four, .report-export-tabs.five { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .report-export-grid, .report-export-preview { grid-template-columns: 1fr; }
   .report-export-modal .modal-actions { flex-direction: column-reverse; }
   .report-export-modal .modal-actions .btn { width: 100%; }
