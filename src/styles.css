@@ -1146,3 +1146,31 @@ tbody tr:hover { background: rgba(255,255,255,.018); }
     width: 150px;
   }
 }
+
+/* Exportação CSV dos relatórios */
+.report-export-button { white-space: nowrap; }
+.report-export-backdrop { z-index: 10020; }
+.report-export-modal { width: min(680px, 100%); max-height: min(88vh, 820px); overflow-y: auto; }
+.report-export-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.report-export-head h3 { margin: 0 0 5px; }
+.report-export-head p { margin: 0; }
+.report-export-section { display: grid; gap: 10px; padding: 16px 0; border-bottom: 1px solid var(--border); }
+.report-export-label { color: #cfc8d8; font-size: 11px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+.report-export-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.report-export-tabs.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.report-export-tabs button { min-height: 38px; border: 1px solid var(--border); border-radius: 9px; background: rgba(255,255,255,.018); color: var(--muted); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; transition: .18s ease; }
+.report-export-tabs button:hover { border-color: rgba(124,58,237,.48); color: #fff; }
+.report-export-tabs button.active { color: #fff; border-color: rgba(124,58,237,.72); background: rgba(124,58,237,.14); }
+.report-export-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.report-period-preview { padding: 10px 12px; border-radius: 9px; background: rgba(212,175,55,.055); border: 1px solid rgba(212,175,55,.16); color: #d8cfb2; font-size: 13px; }
+.report-export-error { color: #ff8f8f; font-size: 12px; }
+.report-export-preview { margin-top: 16px; padding: 14px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; border: 1px solid rgba(212,175,55,.17); border-radius: 12px; background: rgba(212,175,55,.035); }
+.report-export-preview div { display: grid; gap: 4px; }
+.report-export-preview span { color: var(--muted); font-size: 11px; font-weight: 700; }
+.report-export-preview strong { color: #fff; font-size: 15px; }
+@media (max-width: 620px) {
+  .report-export-tabs.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .report-export-grid, .report-export-preview { grid-template-columns: 1fr; }
+  .report-export-modal .modal-actions { flex-direction: column-reverse; }
+  .report-export-modal .modal-actions .btn { width: 100%; }
+}

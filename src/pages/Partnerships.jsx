@@ -7,6 +7,7 @@ import { addRecord, getCollection, removeRecord, setRecord } from '../services/d
 import { isLeader } from '../utils/permissions'
 import { useToast } from '../components/toasts/ToastProvider'
 import { createNotification } from '../services/notificationService'
+import { sendDiscordEvent } from '../services/discordService'
 
 const EMPTY_FORM = {
   type: 'organization',
@@ -83,10 +84,13 @@ export default function Partnerships() {
       }
 
       if (editingId) {
+        const previous = partnerships.find(item => item.id === editingId)
         await setRecord('partnerships', editingId, payload)
+        sendDiscordEvent('admin-log', { action: 'Parceria atualizada', details: `**Parceria:** ${payload.name}\n**Tipo:** ${PARTNERSHIP_TYPES[payload.type]}${previous?.name && previous.name !== payload.name ? `\n**Nome anterior:** ${previous.name}` : ''}` }).catch(() => {})
         notify('Parceria atualizada.')
       } else {
         await addRecord('partnerships', payload)
+        sendDiscordEvent('admin-log', { action: 'Parceria adicionada', details: `**Parceria:** ${payload.name}\n**Tipo:** ${PARTNERSHIP_TYPES[payload.type]}\n**Produto:** ${payload.product}` }).catch(() => {})
         await createNotification({ title: 'Nova parceria', message: `${PARTNERSHIP_TYPES[form.type]} ${form.name.trim()} foi adicionada.`, type: 'partnership', link: '/parcerias', audience: 'global', authorUid: profile.uid })
         notify('Parceria adicionada.')
       }
@@ -107,6 +111,7 @@ export default function Partnerships() {
     setBusy(true)
     try {
       await removeRecord('partnerships', partnership.id)
+      sendDiscordEvent('admin-log', { action: 'Parceria removida', details: `**Parceria:** ${partnership.name}\n**Tipo:** ${PARTNERSHIP_TYPES[getPartnershipType(partnership)]}` }).catch(() => {})
       if (editingId === partnership.id) resetForm()
       notify('Parceria removida.')
       await load()

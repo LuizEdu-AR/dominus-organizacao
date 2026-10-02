@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { BarChart3, Boxes, CircleDollarSign, PackageCheck, ReceiptText } from 'lucide-react'
+import { BarChart3, Boxes, CircleDollarSign, Download, PackageCheck, ReceiptText } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
-import { getAllOrderedCollection } from '../services/dataService'
+import { getAllOrderedCollection, getCollection } from '../services/dataService'
 import { money } from '../utils/formatters'
+import ReportExportModal from '../components/ui/ReportExportModal'
 
 function toDate(value) {
   if (!value) return null
@@ -41,14 +42,18 @@ export default function Reports() {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [selectedUser, setSelectedUser] = useState('all')
+  const [partnerships, setPartnerships] = useState([])
+  const [exportOpen, setExportOpen] = useState(false)
 
   useEffect(() => {
     Promise.all([
       getAllOrderedCollection('sales'),
       getAllOrderedCollection('farms'),
-    ]).then(([saleList, farmList]) => {
+      getCollection('partnerships', 1000),
+    ]).then(([saleList, farmList, partnershipList]) => {
       setSales(saleList)
       setFarms(farmList)
+      setPartnerships(partnershipList)
     }).catch(err => {
       setError(err.message || 'Não foi possível carregar os dados dos relatórios.')
     }).finally(() => setLoading(false))
@@ -135,7 +140,7 @@ export default function Reports() {
 
   return (
     <>
-      <PageHeader eyebrow="GESTÃO" title="Relatórios" description="Visão consolidada das vendas e dos registros de Farm da organização." />
+      <PageHeader eyebrow="GESTÃO" title="Relatórios" description="Visão consolidada das vendas e dos registros de Farm da organização." actions={<button type="button" className="btn ghost report-export-button" onClick={() => setExportOpen(true)}><Download size={16} /> Exportar relatório</button>} />
 
       {error && <div className="notice-banner"><span>{error}</span></div>}
 
@@ -180,6 +185,8 @@ export default function Reports() {
           </table>
         </div>
       </section>
+
+      <ReportExportModal open={exportOpen} onClose={() => setExportOpen(false)} sales={sales} farms={farms} users={users} partnerships={partnerships} />
     </>
   )
 }

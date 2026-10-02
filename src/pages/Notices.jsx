@@ -76,6 +76,7 @@ export default function Notices() {
       }
 
       await addRecord('notices', record)
+      sendDiscordEvent('admin-log', { action: 'Aviso publicado', details: `**Título:** ${record.title}` }).catch(() => {})
       await createNotification({ title: 'Novo aviso', message: form.title.trim(), type: 'notice', link: '/avisos', audience: 'global', authorUid: profile.uid })
 
       try {
@@ -147,7 +148,7 @@ export default function Notices() {
               <p>{notice.text}</p>
               {notice.imageUrl && <img className="notice-image" src={notice.imageUrl} alt={`Imagem do aviso ${notice.title}`} />}
             </div>
-            {isManagement(profile?.role) && <button className="icon-button danger-text" onClick={async () => { await removeRecord('notices', notice.id); load() }}><Trash2 size={16} /></button>}
+            {isManagement(profile?.role) && <button className="icon-button danger-text" onClick={async () => { await removeRecord('notices', notice.id); sendDiscordEvent('admin-log', { action: 'Aviso removido', details: `**Título:** ${notice.title}` }).catch(() => {}); load() }}><Trash2 size={16} /></button>}
           </article>
         ))}
       </div>

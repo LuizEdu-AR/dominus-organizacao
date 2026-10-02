@@ -8,6 +8,7 @@ import { isLeader } from '../utils/permissions'
 import { money } from '../utils/formatters'
 import { useToast } from '../components/toasts/ToastProvider'
 import LoadingButton from '../components/ui/LoadingButton'
+import { sendDiscordEvent } from '../services/discordService'
 
 export default function Prices() {
   const { profile } = useAuth()
@@ -74,6 +75,7 @@ export default function Prices() {
     setBusyAction('fee')
     try {
       await setRecord('settings', 'general', { factionFeePercentage: percentage })
+      sendDiscordEvent('admin-log', { action: 'Taxa da facção alterada', details: `**Nova taxa:** ${percentage}%` }).catch(() => {})
       notify('Taxa da facção atualizada.')
     } catch (error) {
       notify(error.message, 'error')
@@ -92,6 +94,7 @@ export default function Prices() {
         partnershipPrice: Number(product.partnershipEnabled ? product.partnershipPrice : product.price),
         order: index,
       })))
+      sendDiscordEvent('admin-log', { action: 'Tabela de preços atualizada', details: `**Produtos processados:** ${products.length}\nPreços, condições de parceria e/ou ordem da tabela foram salvos.` }).catch(() => {})
       notify('Todas as alterações foram salvas.')
       await load()
     } catch (error) {
@@ -111,6 +114,7 @@ export default function Prices() {
         partnershipPrice: Number(draft.partnershipEnabled ? draft.partnershipPrice || draft.price : draft.price),
         order: products.length,
       })
+      sendDiscordEvent('admin-log', { action: 'Produto adicionado', details: `**Produto:** ${draft.name}\n**Categoria:** ${draft.category}\n**Preço:** ${money(Number(draft.price))}` }).catch(() => {})
       setDraft({ name: '', category: 'Equipamentos', price: '', partnershipEnabled: false, partnershipPrice: '' })
       notify('Produto adicionado.')
       load()
@@ -414,7 +418,7 @@ export default function Prices() {
                     {isLeader(profile?.role) && (
                       <td>
                         <div className="row-actions">
-                          <button className="icon-button danger-text" disabled={Boolean(busyAction)} onClick={async () => { await removeRecord('products', product.id); load() }}><Trash2 size={17} /></button>
+                          <button className="icon-button danger-text" disabled={Boolean(busyAction)} onClick={async () => { await removeRecord('products', product.id); sendDiscordEvent('admin-log', { action: 'Produto removido', details: `**Produto:** ${product.name}\n**Categoria:** ${product.category || 'Outros'}` }).catch(() => {}); load() }}><Trash2 size={17} /></button>
                         </div>
                       </td>
                     )}

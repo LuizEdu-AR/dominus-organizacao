@@ -191,6 +191,23 @@ export default async function handler(req, res) {
         allowed_mentions: { roles: [roleId] },
         embeds: [noticeEmbed],
       })
+    } else if (type === 'admin-log') {
+      const managementRoles = ['leader', 'manager_general', 'manager_actions', 'manager_partnerships', 'manager_finance']
+      if (!managementRoles.includes(caller.role)) return res.status(403).json({ error: 'Apenas a gestão pode registrar logs administrativos.' })
+
+      await send(process.env.DISCORD_ADMIN_LOGS_WEBHOOK, {
+        username: 'Dominus • Logs Administrativos',
+        avatar_url: icon,
+        embeds: [{
+          color: 0x6D28D9,
+          author: { name: 'DOMINUS • LOG ADMINISTRATIVO', icon_url: icon },
+          title: payload.action || 'Ação administrativa',
+          description: payload.details || '-',
+          fields: [{ name: 'Responsável', value: `${caller.name || 'Gestão'}${caller.id ? ` • ID ${caller.id}` : ''}`, inline: false }],
+          thumbnail: { url: icon },
+          timestamp: new Date().toISOString(),
+        }],
+      })
     } else if (type === 'hierarchy') {
       if (caller.role !== 'leader') return res.status(403).json({ error: 'Apenas líderes podem enviar a hierarquia.' })
 
