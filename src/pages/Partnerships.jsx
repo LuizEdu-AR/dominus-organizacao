@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Handshake, Pencil, Plus, Save, Trash2, X } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 import LoadingButton from '../components/ui/LoadingButton'
+import ConfirmModal from '../components/modais/ConfirmModal'
 import { useAuth } from '../context/AuthContext'
 import { addRecord, getCollection, removeRecord, setRecord } from '../services/dataService'
 import { isLeader } from '../utils/permissions'
@@ -35,6 +36,7 @@ export default function Partnerships() {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [filter, setFilter] = useState('all')
+  const [confirmRemove, setConfirmRemove] = useState(null)
 
   async function load() {
     try {
@@ -104,15 +106,21 @@ export default function Partnerships() {
     }
   }
 
-  async function remove(partnership) {
+  function requestRemove(partnership) {
     if (busy) return
-    if (!window.confirm(`Remover a parceria com ${partnership.name}?`)) return
+    setConfirmRemove(partnership)
+  }
+
+  async function remove() {
+    if (busy || !confirmRemove) return
+    const partnership = confirmRemove
 
     setBusy(true)
     try {
       await removeRecord('partnerships', partnership.id)
       sendDiscordEvent('admin-log', { action: 'Parceria removida', details: `**Parceria:** ${partnership.name}\n**Tipo:** ${PARTNERSHIP_TYPES[getPartnershipType(partnership)]}` }).catch(() => {})
       if (editingId === partnership.id) resetForm()
+      setConfirmRemove(null)
       notify('Parceria removida.')
       await load()
     } catch (error) {
@@ -175,7 +183,7 @@ export default function Partnerships() {
                 {leader && (
                   <div className="row-actions partnership-actions">
                     <button className="icon-button" onClick={() => edit(partnership)} title="Editar"><Pencil size={16} /></button>
-                    <button className="icon-button danger-text" onClick={() => remove(partnership)} disabled={busy} title="Remover"><Trash2 size={16} /></button>
+                    <button className="icon-button danger-text" onClick={() => requestRemove(partnership)} disabled={busy} title="Remover"><Trash2 size={16} /></button>
                   </div>
                 )}
               </div>
@@ -186,6 +194,17 @@ export default function Partnerships() {
           ))}
         </div>
       )}
+
+      <ConfirmModal
+        open={Boolean(confirmRemove)}
+        title="Remover parceria?"
+        description={confirmRemove ? `Tem certeza que deseja remover a parceria “${confirmRemove.name}”? Esta ação não poderá ser desfeita.` : ''}
+        confirmLabel="Remover"
+        danger
+        onCancel={() => !busy && setConfirmRemove(null)}
+        onConfirm={remove}
+        loading={busy && Boolean(confirmRemove)}
+      />
     </>
   )
 }
