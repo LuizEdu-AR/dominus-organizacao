@@ -31,6 +31,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
       <Route path="/cadastro" element={user ? <Navigate to="/" /> : <Register />} />
+      <Route path="/register" element={user ? <Navigate to="/" /> : <Register />} />
 
       <Route element={user ? <ProtectedLayout /> : <Navigate to="/login" />}>
         <Route path="/aguardando" element={<PendingAccess />} />
