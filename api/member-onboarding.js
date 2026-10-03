@@ -5,8 +5,38 @@ const normalizeId = (id = '') => id.trim().toLowerCase().replace(/[^a-z0-9._-]/g
 const idToEmail = id => `${normalizeId(id)}@dominus.local`
 const tokenHash = token => crypto.createHash('sha256').update(token).digest('hex')
 
+const RUA_2_INVITE = 'https://discord.gg/Yd87XQY6AT'
+
 function getBody(req) {
   return typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {})
+}
+
+async function sendRua2RegistrationMessage(discordId) {
+  const webhook = process.env.DISCORD_REGISTRATION_WEBHOOK
+  if (!webhook || !discordId) return false
+
+  const response = await fetch(webhook, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      content:
+        `<@${discordId}>, sua conta **Dominus** foi ativada com sucesso!\n\n` +
+        'Agora realize seu registro no Discord **Rua 2 - Ilegal**.\n' +
+        'No campo **Facção**, utilize **Contrabando 4**.\n\n' +
+        `${RUA_2_INVITE}`,
+      allowed_mentions: {
+        parse: [],
+        users: [discordId],
+      },
+    }),
+  })
+
+  if (!response.ok) {
+    const details = await response.text().catch(() => '')
+    throw new Error(`Falha ao enviar aviso da Rua 2 ao Discord (${response.status}). ${details}`)
+  }
+
+  return true
 }
 
 export default async function handler(req, res) {
@@ -135,7 +165,19 @@ export default async function handler(req, res) {
         throw error
       }
 
-      return res.status(200).json({ ok: true, gameId: data.gameId })
+      // A conta já está criada neste ponto. Uma falha no Discord não desfaz a ativação.
+      let discordNotificationSent = false
+      try {
+        discordNotificationSent = await sendRua2RegistrationMessage(data.discordId)
+      } catch (discordError) {
+        console.error('Conta ativada, mas não foi possível enviar o aviso da Rua 2:', discordError)
+      }
+
+      return res.status(200).json({
+        ok: true,
+        gameId: data.gameId,
+        discordNotificationSent,
+      })
     }
 
     return res.status(400).json({ error: 'Ação inválida.' })
