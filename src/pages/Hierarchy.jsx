@@ -88,7 +88,7 @@ export default function Hierarchy() {
   async function dismiss() {
     if (!confirm || busyAction) return
     setBusyAction(`dismiss:${confirm.uid}`)
-    try { await dismissUser(confirm.uid); notify('Usuário demitido e conta excluída.'); setConfirm(null); await load() }
+    try { await dismissUser(confirm.uid); notify('Membro desligado. O histórico foi preservado.'); setConfirm(null); await load() }
     catch (e) { notify(e.message, 'error') }
     finally { setBusyAction(null) }
   }
@@ -104,7 +104,7 @@ export default function Hierarchy() {
   }
 
   const order = ['leader', 'manager', 'member', 'pending']
-  const sorted = [...users].sort((a, b) => order.indexOf(a.role) - order.indexOf(b.role))
+  const sorted = users.filter(user => user.status !== 'dismissed').sort((a, b) => order.indexOf(a.role) - order.indexOf(b.role))
 
   return (
     <>
@@ -138,7 +138,7 @@ export default function Hierarchy() {
                       )}
                       {user.uid !== profile?.uid &&
                         isManagement(profile?.role) &&
-                        !(user.role === 'leader' && !isLeader(profile?.role)) && (
+                        (isLeader(profile?.role) || user.role === 'member') && (
                           <button
                             className="icon-button danger-text"
                             onClick={() => setConfirm(user)}
@@ -176,7 +176,7 @@ export default function Hierarchy() {
       <ConfirmModal
         open={Boolean(confirm)}
         title="Demitir usuário?"
-        description={confirm ? `A conta de ${confirm.name} será removida do Firebase Auth e do Firestore.` : ''}
+        description={confirm ? `A conta de ${confirm.name} será desativada. Os registros e históricos serão preservados.` : ''}
         confirmLabel="Demitir"
         danger
         onCancel={() => !busyAction && setConfirm(null)}

@@ -11,6 +11,15 @@ const validRoles = ['member', 'manager', 'leader']
 
 const isManagement = role => role === 'leader' || role === 'manager'
 
+async function enqueueDiscordSync(payload) {
+  if (!payload?.discordId) return
+  await adminDb.collection('discordSyncJobs').add({
+    ...payload,
+    status: 'pending',
+    createdAt: new Date(),
+  })
+}
+
 const roleLabels = {
   leader: 'Líder', manager: 'Gerente', member: 'Membro', pending: 'Pendente',
   manager_general: 'Gerente Geral', manager_actions: 'Gerente de Ações',
@@ -83,6 +92,9 @@ export default async function handler(req, res) {
       if (caller.role !== 'leader') return res.status(403).json({ error: 'Apenas líderes podem alterar cargos.' })
       if (!validRoles.includes(role)) return res.status(400).json({ error: 'Cargo inválido.' })
       await userRef.update({ role, status: 'active' })
+      if (target.role !== role) {
+        await enqueueDiscordSync({ type: 'set-role', discordId: target.discordId, role, uid, requestedBy: caller.uid })
+      }
       await sendAdminLog(caller, 'Cargo alterado', `**Membro:** ${target.name || 'Usuário'}${target.id ? ` • ID ${target.id}` : ''}\n**Alteração:** ${roleLabels[target.role] || target.role} → ${roleLabels[role] || role}`)
       return res.status(200).json({ ok: true })
     }
@@ -93,6 +105,9 @@ export default async function handler(req, res) {
       if (!validRoles.includes(role)) return res.status(400).json({ error: 'Cargo inválido.' })
       if (password && password.length < 8) return res.status(400).json({ error: 'A senha deve possuir no mínimo 8 caracteres.' })
       await userRef.update({ role, status: 'active' })
+      if (target.role !== role) {
+        await enqueueDiscordSync({ type: 'set-role', discordId: target.discordId, role, uid, requestedBy: caller.uid })
+      }
       if (password) await adminAuth.updateUser(uid, { password })
       const changes = []
       if (target.role !== role) changes.push(`**Cargo:** ${roleLabels[target.role] || target.role} → ${roleLabels[role] || role}`)
@@ -102,12 +117,23 @@ export default async function handler(req, res) {
     }
 
     if (action === 'dismiss') {
-      if (target.role === 'leader' && caller.role !== 'leader') {
-        return res.status(403).json({ error: 'Gerentes não podem demitir líderes.' })
+      if (caller.role === 'manager' && target.role !== 'member') {
+        return res.status(403).json({ error: 'Gerentes só podem desligar membros.' })
       }
-      await adminAuth.deleteUser(uid)
-      await userRef.delete()
-      await sendAdminLog(caller, 'Membro removido', `**Membro:** ${target.name || 'Usuário'}${target.id ? ` • ID ${target.id}` : ''}\n**Cargo:** ${roleLabels[target.role] || target.role}`)
+      if (target.role === 'leader' && caller.role !== 'leader') {
+        return res.status(403).json({ error: 'Gerentes não podem desligar líderes.' })
+      }
+
+      await adminAuth.updateUser(uid, { disabled: true })
+      await userRef.update({
+        status: 'dismissed',
+        dismissedAt: new Date(),
+        dismissedBy: caller.uid,
+      })
+      await enqueueDiscordSync({ type: 'dismiss', discordId: target.discordId, uid, requestedBy: caller.uid })
+      await sendAdminLog(caller, 'Membro desligado', `**Membro:** ${target.name || 'Usuário'}${target.id ? ` • ID ${target.id}` : ''}
+**Cargo:** ${roleLabels[target.role] || target.role}
+**Histórico:** preservado`)
       return res.status(200).json({ ok: true })
     }
 
