@@ -21,3 +21,5 @@ export const changeUserRole = (uid, role) => adminRequest('change-role', { uid, 
 export const dismissUser = (uid) => adminRequest('dismiss', { uid })
 
 export const updateUserByLeader = (uid, role, password) => adminRequest('leader-edit', { uid, role, password })
+
+export const migrateLegacyManagerRoles = () => adminRequest('migrate-manager-roles', {})

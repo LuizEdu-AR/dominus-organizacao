@@ -4,7 +4,7 @@ import PageHeader from '../components/ui/PageHeader'
 import ConfirmModal from '../components/modais/ConfirmModal'
 import { useAuth } from '../context/AuthContext'
 import { getCollection } from '../services/dataService'
-import { approveUser, dismissUser, updateUserByLeader } from '../services/userAdminService'
+import { approveUser, dismissUser, migrateLegacyManagerRoles, updateUserByLeader } from '../services/userAdminService'
 import { sendDiscordEvent } from '../services/discordService'
 import { isLeader, isManagement, ROLE_LABELS } from '../utils/permissions'
 import { useToast } from '../components/toasts/ToastProvider'
@@ -13,10 +13,7 @@ import { createNotification } from '../services/notificationService'
 
 const roleOptions = [
   ['member', 'Membro'],
-  ['manager_finance', 'Gerente de Finanças'],
-  ['manager_partnerships', 'Gerente de Parcerias'],
-  ['manager_actions', 'Gerente de Ações'],
-  ['manager_general', 'Gerente Geral'],
+  ['manager', 'Gerente'],
   ['leader', 'Líder'],
 ]
 
@@ -32,7 +29,18 @@ export default function Hierarchy() {
   const [busyAction, setBusyAction] = useState(null)
 
   const load = async () => setUsers(await getCollection('users'))
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    async function initializeHierarchy() {
+      try {
+        if (isLeader(profile?.role)) await migrateLegacyManagerRoles()
+      } catch (error) {
+        console.error('Falha ao migrar cargos antigos de gerente:', error)
+      } finally {
+        await load()
+      }
+    }
+    initializeHierarchy()
+  }, [profile?.role])
 
   async function approve(uid) {
     if (busyAction) return
@@ -95,7 +103,7 @@ export default function Hierarchy() {
     finally { setBusyAction(null) }
   }
 
-  const order = ['leader', 'manager_general', 'manager_actions', 'manager_partnerships', 'manager_finance', 'member', 'pending']
+  const order = ['leader', 'manager', 'member', 'pending']
   const sorted = [...users].sort((a, b) => order.indexOf(a.role) - order.indexOf(b.role))
 
   return (

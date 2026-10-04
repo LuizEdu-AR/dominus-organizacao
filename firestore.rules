@@ -22,12 +22,7 @@ service cloud.firestore {
     }
 
     function manager() {
-      return approved() && myProfile().role in [
-        "manager_general",
-        "manager_actions",
-        "manager_partnerships",
-        "manager_finance"
-      ];
+      return approved() && myProfile().role == "manager";
     }
 
     function management() {

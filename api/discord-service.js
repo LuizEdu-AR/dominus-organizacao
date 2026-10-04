@@ -2,10 +2,7 @@ import { requireUser } from './_firebaseAdmin.js'
 
 const ROLE_LABELS = {
   leader: 'Líder',
-  manager_general: 'Gerente Geral',
-  manager_actions: 'Gerente de Ações',
-  manager_partnerships: 'Gerente de Parcerias',
-  manager_finance: 'Gerente de Finanças',
+  manager: 'Gerente',
   member: 'Membro',
 }
 
@@ -154,13 +151,7 @@ export default async function handler(req, res) {
         embeds: [embed],
       })
     } else if (type === 'notice') {
-      const managementRoles = [
-        'leader',
-        'manager_general',
-        'manager_actions',
-        'manager_partnerships',
-        'manager_finance',
-      ]
+      const managementRoles = ['leader', 'manager']
       if (!managementRoles.includes(caller.role)) {
         return res.status(403).json({ error: 'Apenas a gestão pode publicar avisos.' })
       }
@@ -192,7 +183,7 @@ export default async function handler(req, res) {
         embeds: [noticeEmbed],
       })
     } else if (type === 'admin-log') {
-      const managementRoles = ['leader', 'manager_general', 'manager_actions', 'manager_partnerships', 'manager_finance']
+      const managementRoles = ['leader', 'manager']
       if (!managementRoles.includes(caller.role)) return res.status(403).json({ error: 'Apenas a gestão pode registrar logs administrativos.' })
 
       await send(process.env.DISCORD_ADMIN_LOGS_WEBHOOK, {
@@ -214,10 +205,7 @@ export default async function handler(req, res) {
       const users = payload.users || []
       const roleGroups = [
         { role: 'leader', title: ' LÍDERES' },
-        { role: 'manager_general', title: ' GERÊNCIA GERAL' },
-        { role: 'manager_actions', title: ' GERÊNCIA DE AÇÕES' },
-        { role: 'manager_partnerships', title: ' GERÊNCIA DE PARCERIAS' },
-        { role: 'manager_finance', title: ' GERÊNCIA FINANCEIRA' },
+        { role: 'manager', title: ' GERENTES' },
         { role: 'member', title: ' MEMBROS' },
       ]
 

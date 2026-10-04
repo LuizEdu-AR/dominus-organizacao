@@ -1,23 +1,20 @@
 import { adminAuth, adminDb, requireUser } from './_firebaseAdmin.js'
 
-const managerRoles = [
+const legacyManagerRoles = [
   'manager_general',
   'manager_actions',
   'manager_partnerships',
   'manager_finance',
 ]
 
-const validRoles = [
-  'member',
-  ...managerRoles,
-  'leader',
-]
+const validRoles = ['member', 'manager', 'leader']
 
-const isManagement = role => role === 'leader' || managerRoles.includes(role)
+const isManagement = role => role === 'leader' || role === 'manager'
 
 const roleLabels = {
-  leader: 'Líder', manager_general: 'Gerente Geral', manager_actions: 'Gerente de Ações',
-  manager_partnerships: 'Gerente de Parcerias', manager_finance: 'Gerente de Finanças', member: 'Membro', pending: 'Pendente',
+  leader: 'Líder', manager: 'Gerente', member: 'Membro', pending: 'Pendente',
+  manager_general: 'Gerente Geral', manager_actions: 'Gerente de Ações',
+  manager_partnerships: 'Gerente de Parcerias', manager_finance: 'Gerente de Finanças',
 }
 
 async function sendAdminLog(caller, action, details) {
@@ -46,6 +43,27 @@ export default async function handler(req, res) {
     }
 
     const { action, uid, role, password } = req.body || {}
+
+    if (action === 'migrate-manager-roles') {
+      if (caller.role !== 'leader') return res.status(403).json({ error: 'Apenas líderes podem executar a migração.' })
+
+      const snapshots = await Promise.all(
+        legacyManagerRoles.map(legacyRole =>
+          adminDb.collection('users').where('role', '==', legacyRole).get()
+        )
+      )
+
+      const docs = snapshots.flatMap(snapshot => snapshot.docs)
+      if (!docs.length) return res.status(200).json({ ok: true, migrated: 0 })
+
+      const batch = adminDb.batch()
+      docs.forEach(doc => batch.update(doc.ref, { role: 'manager' }))
+      await batch.commit()
+
+      await sendAdminLog(caller, 'Cargos de gerente unificados', `**Usuários migrados:** ${docs.length}\n**Novo cargo:** Gerente`)
+      return res.status(200).json({ ok: true, migrated: docs.length })
+    }
+
     if (!uid) return res.status(400).json({ error: 'UID obrigatório.' })
     if (uid === caller.uid && action === 'dismiss') return res.status(400).json({ error: 'Você não pode demitir a si mesmo.' })
 
