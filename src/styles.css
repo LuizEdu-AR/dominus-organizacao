@@ -1176,3 +1176,36 @@ tbody tr:hover { background: rgba(255,255,255,.018); }
   .report-export-modal .modal-actions { flex-direction: column-reverse; }
   .report-export-modal .modal-actions .btn { width: 100%; }
 }
+
+/* Modal de edição de usuário — Hierarquia */
+.hierarchy-edit-modal .hierarchy-edit-fields {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.hierarchy-edit-modal .hierarchy-password-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
+  padding-top: 2px;
+}
+
+.hierarchy-edit-modal .hierarchy-password-block strong {
+  display: block;
+  color: #f2eef7;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.hierarchy-edit-modal .hierarchy-password-block .muted {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.hierarchy-edit-modal > .muted {
+  margin: -4px 0 0;
+}
