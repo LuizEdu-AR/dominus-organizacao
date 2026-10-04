@@ -1177,35 +1177,25 @@ tbody tr:hover { background: rgba(255,255,255,.018); }
   .report-export-modal .modal-actions .btn { width: 100%; }
 }
 
-/* Modal de edição de usuário — Hierarquia */
-.hierarchy-edit-modal .hierarchy-edit-fields {
-  display: grid;
-  gap: 16px;
-  margin-top: 18px;
-}
 
-.hierarchy-edit-modal .hierarchy-password-block {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 2px;
-  padding-top: 2px;
-}
-
-.hierarchy-edit-modal .hierarchy-password-block strong {
+/* Hierarquia: carregamento imediato com cache + skeleton no primeiro acesso */
+.hierarchy-skeleton-row td { height: 58px; }
+.hierarchy-skeleton {
   display: block;
-  color: #f2eef7;
-  font-size: 14px;
-  line-height: 1.35;
+  height: 13px;
+  max-width: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255,255,255,.045) 25%, rgba(255,255,255,.09) 50%, rgba(255,255,255,.045) 75%);
+  background-size: 200% 100%;
+  animation: hierarchy-skeleton-loading 1.25s ease-in-out infinite;
 }
-
-.hierarchy-edit-modal .hierarchy-password-block .muted {
-  display: block;
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.5;
+.hierarchy-skeleton.short { width: 58px; }
+.hierarchy-skeleton.medium { width: 92px; }
+.hierarchy-skeleton.wide { width: 170px; }
+@keyframes hierarchy-skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
-
-.hierarchy-edit-modal > .muted {
-  margin: -4px 0 0;
+@media (prefers-reduced-motion: reduce) {
+  .hierarchy-skeleton { animation: none; }
 }

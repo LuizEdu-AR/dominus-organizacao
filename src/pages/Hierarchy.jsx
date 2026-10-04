@@ -10,6 +10,23 @@ import { useToast } from '../components/toasts/ToastProvider'
 import LoadingButton from '../components/ui/LoadingButton'
 import { createNotification } from '../services/notificationService'
 
+const HIERARCHY_CACHE_KEY = 'dominus:hierarchy-users:v1'
+
+function readHierarchyCache() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(HIERARCHY_CACHE_KEY) || 'null')
+    return Array.isArray(cached?.users) ? cached.users : []
+  } catch {
+    return []
+  }
+}
+
+function writeHierarchyCache(users) {
+  try {
+    localStorage.setItem(HIERARCHY_CACHE_KEY, JSON.stringify({ users, savedAt: Date.now() }))
+  } catch {}
+}
+
 const roleOptions = [
   ['member', 'Membro'],
   ['manager', 'Gerente'],
@@ -19,7 +36,8 @@ const roleOptions = [
 export default function Hierarchy() {
   const { profile } = useAuth()
   const { notify } = useToast()
-  const [users, setUsers] = useState([])
+  const [users, setUsers] = useState(() => readHierarchyCache())
+  const [loadingUsers, setLoadingUsers] = useState(() => readHierarchyCache().length === 0)
   const [confirm, setConfirm] = useState(null)
   const [dismissalReason, setDismissalReason] = useState('')
   const [editing, setEditing] = useState(null)
@@ -28,18 +46,41 @@ export default function Hierarchy() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [busyAction, setBusyAction] = useState(null)
 
-  const load = async () => setUsers(await getCollection('users'))
+  const load = async () => {
+    const freshUsers = await getCollection('users')
+    setUsers(freshUsers)
+    writeHierarchyCache(freshUsers)
+    setLoadingUsers(false)
+    return freshUsers
+  }
+
   useEffect(() => {
+    let active = true
+
     async function initializeHierarchy() {
+      // A lista não espera mais a migração administrativa: Firestore começa a carregar imediatamente.
+      const usersPromise = getCollection('users')
+
+      if (isLeader(profile?.role)) {
+        migrateLegacyManagerRoles().catch(error => {
+          console.error('Falha ao migrar cargos antigos de gerente:', error)
+        })
+      }
+
       try {
-        if (isLeader(profile?.role)) await migrateLegacyManagerRoles()
+        const freshUsers = await usersPromise
+        if (!active) return
+        setUsers(freshUsers)
+        writeHierarchyCache(freshUsers)
       } catch (error) {
-        console.error('Falha ao migrar cargos antigos de gerente:', error)
+        console.error('Falha ao carregar membros:', error)
       } finally {
-        await load()
+        if (active) setLoadingUsers(false)
       }
     }
+
     initializeHierarchy()
+    return () => { active = false }
   }, [profile?.role])
 
   async function approve(uid) {
@@ -127,6 +168,15 @@ export default function Hierarchy() {
           <table>
             <thead><tr><th>Membro</th><th>ID</th><th>Cargo</th><th>Status</th><th>Ações</th></tr></thead>
             <tbody>
+              {loadingUsers && sorted.length === 0 && Array.from({ length: 5 }).map((_, index) => (
+                <tr className="hierarchy-skeleton-row" key={`hierarchy-skeleton-${index}`}>
+                  <td><span className="hierarchy-skeleton wide" /></td>
+                  <td><span className="hierarchy-skeleton short" /></td>
+                  <td><span className="hierarchy-skeleton medium" /></td>
+                  <td><span className="hierarchy-skeleton medium" /></td>
+                  <td><span className="hierarchy-skeleton short" /></td>
+                </tr>
+              ))}
               {sorted.map(user => (
                 <tr key={user.uid}>
                   <td><div className="member-name">{user.role === 'leader' ? <Crown size={16} /> : <ShieldCheck size={16} />}{user.name}</div></td>
