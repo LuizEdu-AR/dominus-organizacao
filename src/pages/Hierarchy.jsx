@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Crown, Pencil, Send, ShieldCheck, Trash2 } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
-import ConfirmModal from '../components/modais/ConfirmModal'
 import { useAuth } from '../context/AuthContext'
 import { getCollection } from '../services/dataService'
 import { approveUser, dismissUser, migrateLegacyManagerRoles, updateUserByLeader } from '../services/userAdminService'
@@ -22,6 +21,7 @@ export default function Hierarchy() {
   const { notify } = useToast()
   const [users, setUsers] = useState([])
   const [confirm, setConfirm] = useState(null)
+  const [dismissalReason, setDismissalReason] = useState('')
   const [editing, setEditing] = useState(null)
   const [editRole, setEditRole] = useState('member')
   const [newPassword, setNewPassword] = useState('')
@@ -87,9 +87,16 @@ export default function Hierarchy() {
 
   async function dismiss() {
     if (!confirm || busyAction) return
+    const reason = dismissalReason.trim()
+    if (!reason) return notify('Informe o motivo do desligamento.', 'error')
     setBusyAction(`dismiss:${confirm.uid}`)
-    try { await dismissUser(confirm.uid); notify('Membro desligado. O histórico foi preservado.'); setConfirm(null); await load() }
-    catch (e) { notify(e.message, 'error') }
+    try {
+      await dismissUser(confirm.uid, reason)
+      notify('Membro desligado. O histórico foi preservado e a exoneração será enviada ao Discord.')
+      setConfirm(null)
+      setDismissalReason('')
+      await load()
+    } catch (e) { notify(e.message, 'error') }
     finally { setBusyAction(null) }
   }
 
@@ -141,7 +148,7 @@ export default function Hierarchy() {
                         (isLeader(profile?.role) || user.role === 'member') && (
                           <button
                             className="icon-button danger-text"
-                            onClick={() => setConfirm(user)}
+                            onClick={() => { setConfirm(user); setDismissalReason('') }}
                             title="Demitir"
                           >
                             <Trash2 size={17} />
@@ -173,16 +180,29 @@ export default function Hierarchy() {
         </div>
       )}
 
-      <ConfirmModal
-        open={Boolean(confirm)}
-        title="Demitir usuário?"
-        description={confirm ? `A conta de ${confirm.name} será desativada. Os registros e históricos serão preservados.` : ''}
-        confirmLabel="Demitir"
-        danger
-        onCancel={() => !busyAction && setConfirm(null)}
-        onConfirm={dismiss}
-        loading={Boolean(confirm && busyAction === `dismiss:${confirm.uid}`)}
-      />
+      {confirm && (
+        <div className="modal-backdrop" onMouseDown={event => event.target === event.currentTarget && !busyAction && setConfirm(null)}>
+          <div className="modal-card">
+            <h3>Desligar membro?</h3>
+            <p className="muted">A conta de {confirm.name} será desativada. Os registros e históricos serão preservados.</p>
+            <label>
+              Motivo do desligamento
+              <textarea
+                rows="5"
+                maxLength="1000"
+                value={dismissalReason}
+                onChange={event => setDismissalReason(event.target.value)}
+                placeholder="Informe o motivo do desligamento"
+                disabled={Boolean(busyAction)}
+              />
+            </label>
+            <div className="modal-actions">
+              <button className="btn ghost" onClick={() => { setConfirm(null); setDismissalReason('') }} disabled={Boolean(busyAction)}>Cancelar</button>
+              <LoadingButton className="btn danger" onClick={dismiss} loading={busyAction === `dismiss:${confirm.uid}`} disabled={!dismissalReason.trim()} loadingText="Desligando...">Confirmar desligamento</LoadingButton>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

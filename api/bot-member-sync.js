@@ -90,23 +90,31 @@ export default async function handler(req, res) {
     }
 
     if (action === 'dismiss-from-discord') {
-      const { discordId, discordUsername = '', gameId = '', actorDiscordId = '', actorUsername = '' } = req.body || {}
+      const { discordId, discordUsername = '', gameId = '', actorDiscordId = '', actorUsername = '', actorGameId = '', reason = '' } = req.body || {}
       if (!discordId) return res.status(400).json({ error: 'Discord ID obrigatório.' })
+
+      const dismissalReason = String(reason || '').trim()
+      if (!dismissalReason) return res.status(400).json({ error: 'Informe o motivo do desligamento.' })
+      if (dismissalReason.length > 1000) return res.status(400).json({ error: 'O motivo deve possuir no máximo 1000 caracteres.' })
 
       const target = await findAndLinkLegacyUser({ discordId, discordUsername, gameId })
       if (!target) return res.status(404).json({ error: 'Conta vinculada ao Discord não encontrada. Verifique se o apelido do membro começa com o ID do jogo, por exemplo: 194 | Nome.' })
-      if (target.status === 'dismissed') return res.status(200).json({ ok: true, changed: false })
+      if (target.status === 'dismissed') return res.status(200).json({ ok: true, changed: false, memberName: target.name || '', memberGameId: target.id || '' })
 
+      const dismissedAt = new Date()
       await adminAuth.updateUser(target.uid, { disabled: true })
       await target.ref.update({
         status: 'dismissed',
-        dismissedAt: new Date(),
+        dismissalReason,
+        dismissedAt,
         dismissedFrom: 'discord',
         dismissedByDiscordId: String(actorDiscordId || ''),
         dismissedByDiscordUsername: String(actorUsername || ''),
+        dismissedByName: String(actorUsername || ''),
+        dismissedById: String(actorGameId || ''),
       })
 
-      return res.status(200).json({ ok: true, changed: true, uid: target.uid })
+      return res.status(200).json({ ok: true, changed: true, uid: target.uid, memberName: target.name || '', memberGameId: target.id || '', dismissedAt: dismissedAt.toISOString() })
     }
 
     if (action === 'next-jobs') {

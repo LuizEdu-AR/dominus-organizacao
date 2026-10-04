@@ -12,7 +12,7 @@ const validRoles = ['member', 'manager', 'leader']
 const isManagement = role => role === 'leader' || role === 'manager'
 
 async function enqueueDiscordSync(payload) {
-  if (!payload?.discordId) return
+  if (!payload?.discordId && !payload?.gameId) throw new Error('O membro não possui vínculo com o Discord nem ID do jogo para sincronização.')
   await adminDb.collection('discordSyncJobs').add({
     ...payload,
     status: 'pending',
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: 'Sem permissão.' })
     }
 
-    const { action, uid, role, password } = req.body || {}
+    const { action, uid, role, password, reason = '' } = req.body || {}
 
     if (action === 'migrate-manager-roles') {
       if (caller.role !== 'leader') return res.status(403).json({ error: 'Apenas líderes podem executar a migração.' })
@@ -93,7 +93,7 @@ export default async function handler(req, res) {
       if (!validRoles.includes(role)) return res.status(400).json({ error: 'Cargo inválido.' })
       await userRef.update({ role, status: 'active' })
       if (target.role !== role) {
-        await enqueueDiscordSync({ type: 'set-role', discordId: target.discordId, role, uid, requestedBy: caller.uid })
+        await enqueueDiscordSync({ type: 'set-role', discordId: target.discordId || '', gameId: target.id || '', role, uid, requestedBy: caller.uid, requestedByName: caller.name || '', requestedByGameId: caller.id || '' })
       }
       await sendAdminLog(caller, 'Cargo alterado', `**Membro:** ${target.name || 'Usuário'}${target.id ? ` • ID ${target.id}` : ''}\n**Alteração:** ${roleLabels[target.role] || target.role} → ${roleLabels[role] || role}`)
       return res.status(200).json({ ok: true })
@@ -106,7 +106,7 @@ export default async function handler(req, res) {
       if (password && password.length < 8) return res.status(400).json({ error: 'A senha deve possuir no mínimo 8 caracteres.' })
       await userRef.update({ role, status: 'active' })
       if (target.role !== role) {
-        await enqueueDiscordSync({ type: 'set-role', discordId: target.discordId, role, uid, requestedBy: caller.uid })
+        await enqueueDiscordSync({ type: 'set-role', discordId: target.discordId || '', gameId: target.id || '', role, uid, requestedBy: caller.uid, requestedByName: caller.name || '', requestedByGameId: caller.id || '' })
       }
       if (password) await adminAuth.updateUser(uid, { password })
       const changes = []
@@ -117,6 +117,9 @@ export default async function handler(req, res) {
     }
 
     if (action === 'dismiss') {
+      const dismissalReason = String(reason || '').trim()
+      if (!dismissalReason) return res.status(400).json({ error: 'Informe o motivo do desligamento.' })
+      if (dismissalReason.length > 1000) return res.status(400).json({ error: 'O motivo deve possuir no máximo 1000 caracteres.' })
       if (caller.role === 'manager' && target.role !== 'member') {
         return res.status(403).json({ error: 'Gerentes só podem desligar membros.' })
       }
@@ -124,15 +127,35 @@ export default async function handler(req, res) {
         return res.status(403).json({ error: 'Gerentes não podem desligar líderes.' })
       }
 
+      const dismissedAt = new Date()
       await adminAuth.updateUser(uid, { disabled: true })
       await userRef.update({
         status: 'dismissed',
-        dismissedAt: new Date(),
+        dismissalReason,
+        dismissedAt,
+        dismissedFrom: 'site',
         dismissedBy: caller.uid,
+        dismissedByUid: caller.uid,
+        dismissedByName: caller.name || '',
+        dismissedById: caller.id || '',
       })
-      await enqueueDiscordSync({ type: 'dismiss', discordId: target.discordId, uid, requestedBy: caller.uid })
+      await enqueueDiscordSync({
+        type: 'dismiss',
+        discordId: target.discordId || '',
+        gameId: target.id || '',
+        uid,
+        memberName: target.name || 'Usuário',
+        memberGameId: target.id || '',
+        previousRole: target.role || '',
+        reason: dismissalReason,
+        requestedBy: caller.uid,
+        requestedByName: caller.name || 'Gestão',
+        requestedByGameId: caller.id || '',
+        origin: 'site',
+      })
       await sendAdminLog(caller, 'Membro desligado', `**Membro:** ${target.name || 'Usuário'}${target.id ? ` • ID ${target.id}` : ''}
 **Cargo:** ${roleLabels[target.role] || target.role}
+**Motivo:** ${dismissalReason}
 **Histórico:** preservado`)
       return res.status(200).json({ ok: true })
     }
