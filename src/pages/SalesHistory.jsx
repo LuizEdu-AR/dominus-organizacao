@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Search, Trash2 } from 'lucide-react'
+import { Search, Trash2, Image as ImageIcon, X, ExternalLink } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
 import Pagination from '../components/ui/Pagination'
 import { useAuth } from '../context/AuthContext'
@@ -12,6 +12,7 @@ export default function SalesHistory() {
   const [sales, setSales] = useState([])
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
+  const [selectedReceipt, setSelectedReceipt] = useState(null)
   const perPage = 8
 
   const load = async () => setSales(await getOrderedCollection('sales'))
@@ -33,6 +34,12 @@ export default function SalesHistory() {
   const current = useMemo(() => filteredSales.slice((page - 1) * perPage, page * perPage), [filteredSales, page])
 
   useEffect(() => { setPage(1) }, [search])
+  useEffect(() => {
+    if (!selectedReceipt) return
+    const onKey = event => { if (event.key === 'Escape') setSelectedReceipt(null) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [selectedReceipt])
   useEffect(() => {
     if (page > totalPages) setPage(totalPages)
   }, [page, totalPages])
@@ -57,7 +64,7 @@ export default function SalesHistory() {
       <div className="panel">
         <div className="table-wrap">
           <table>
-            <thead><tr><th>Data</th><th>Vendedor</th><th>Tipo</th><th>Itens</th><th>Total</th>{isManagement(profile?.role) && <th>Ações</th>}</tr></thead>
+            <thead><tr><th>Data</th><th>Vendedor</th><th>Tipo</th><th>Itens</th><th>Total</th><th>Comprovante</th>{isManagement(profile?.role) && <th>Ações</th>}</tr></thead>
             <tbody>
               {current.map(sale => (
                 <tr key={sale.id}>
@@ -72,12 +79,13 @@ export default function SalesHistory() {
                   </td>
                   <td>{sale.items?.map(i => `${i.qty}x ${i.name}`).join(', ')}</td>
                   <td>{money(sale.total)}</td>
+                  <td>{sale.imageUrl ? <button type="button" className="btn ghost small" onClick={() => setSelectedReceipt(sale)}><ImageIcon size={15} /> Ver comprovante</button> : <span className="muted">Sem anexo</span>}</td>
                   {isManagement(profile?.role) && <td><button className="icon-button danger-text" onClick={async () => { await removeRecord('sales', sale.id); load() }}><Trash2 size={17} /></button></td>}
                 </tr>
               ))}
               {current.length === 0 && (
                 <tr>
-                  <td colSpan={isManagement(profile?.role) ? 6 : 5} className="history-empty">
+                  <td colSpan={isManagement(profile?.role) ? 7 : 6} className="history-empty">
                     Nenhum registro encontrado para esta pesquisa.
                   </td>
                 </tr>
@@ -86,6 +94,13 @@ export default function SalesHistory() {
           </table>
         </div>
       </div>
+      {selectedReceipt && <div className="receipt-modal-backdrop" onClick={() => setSelectedReceipt(null)} role="presentation">
+        <div className="receipt-modal panel" role="dialog" aria-modal="true" aria-label="Comprovante da venda" onClick={event => event.stopPropagation()}>
+          <div className="receipt-modal-header"><div><h3>Comprovante da venda</h3><span className="muted">{selectedReceipt.sellerName} · ID {selectedReceipt.sellerId} · {dateTime(selectedReceipt.createdAt)}</span></div><button className="icon-button" aria-label="Fechar" onClick={() => setSelectedReceipt(null)}><X size={20} /></button></div>
+          <img src={selectedReceipt.imageUrl} alt="Comprovante anexado à venda" />
+          <a className="btn ghost small" href={selectedReceipt.imageUrl} target="_blank" rel="noopener noreferrer"><ExternalLink size={16} /> Abrir imagem original</a>
+        </div>
+      </div>}
       <Pagination page={page} totalPages={totalPages} onChange={setPage} compact showPageInput />
     </>
   )

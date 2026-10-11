@@ -1226,3 +1226,19 @@ tbody tr:hover { background: rgba(255,255,255,.018); }
   line-height: 1.45;
   font-size: 13px;
 }
+
+/* Comprovantes e controles de data — Dominus */
+.report-filter-fields input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.4);
+  opacity: .9;
+  cursor: pointer;
+}
+.sale-receipt-input { display: grid; gap: 8px; margin: 16px 0 10px; font-size: 13px; font-weight: 600; }
+.sale-receipt-input input { max-width: 100%; }
+.sale-receipt-preview { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; font-size: 12px; }
+.sale-receipt-preview img { width: 58px; height: 50px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
+.receipt-modal-backdrop { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.82); display: grid; place-items: center; padding: 20px; }
+.receipt-modal { width: min(820px, 100%); max-height: 92vh; display: flex; flex-direction: column; align-items: start; gap: 14px; overflow: auto; padding: 22px; }
+.receipt-modal-header { width: 100%; display: flex; justify-content: space-between; gap: 16px; align-items: start; }
+.receipt-modal-header h3 { margin: 0 0 5px; }
+.receipt-modal > img { display: block; width: 100%; max-height: 65vh; object-fit: contain; border-radius: 10px; background: rgba(0,0,0,.35); }

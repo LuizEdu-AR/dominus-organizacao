@@ -12,6 +12,9 @@ import {
   ShieldCheck,
   Sparkles,
   Swords,
+  TrendingUp,
+  ShoppingCart,
+  Wallet,
   Users,
 } from 'lucide-react'
 import PageHeader from '../components/ui/PageHeader'
@@ -125,6 +128,23 @@ export default function Home() {
     }
   }, [sales, farms, users])
 
+  const salesAverages = useMemo(() => {
+    const dated = sales.map(sale => ({ ...sale, saleDate: toDate(sale.createdAt) })).filter(sale => sale.saleDate && sale.saleDate <= new Date())
+    if (!dated.length) return { count: 0, value: 0, ticket: 0 }
+    // Week boundaries are Sunday 00:00 through Saturday 23:59:59, in Brazil time.
+    const dayKey = date => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date)
+    const first = dated.reduce((min, sale) => sale.saleDate < min ? sale.saleDate : min, dated[0].saleDate)
+    const [year, month, day] = dayKey(first).split('-').map(Number)
+    const firstDay = new Date(Date.UTC(year, month - 1, day))
+    const firstSunday = new Date(firstDay)
+    firstSunday.setUTCDate(firstSunday.getUTCDate() - firstSunday.getUTCDay())
+    const [ny, nm, nd] = dayKey(new Date()).split('-').map(Number)
+    const today = new Date(Date.UTC(ny, nm - 1, nd))
+    const weekCount = Math.max(1, Math.floor((today - firstSunday) / (7 * 86400000)) + 1)
+    const value = dated.reduce((sum, sale) => sum + Number(sale.total ?? sale.subtotal ?? 0), 0)
+    return { count: dated.length / weekCount, value: value / weekCount, ticket: value / dated.length }
+  }, [sales])
+
   const recentSales = sales.slice(0, 4)
   const recentFarms = farms.slice(0, 4)
 
@@ -149,6 +169,9 @@ export default function Home() {
               <Link to="/historico-farm" className="home-kpi"><Boxes /><span>Farms</span><strong>{week.farmCount.toLocaleString('pt-BR')}</strong></Link>
               <Link to="/historico-farm" className="home-kpi"><PackageCheck /><span>Itens farmados</span><strong>{week.farmItems.toLocaleString('pt-BR')}</strong></Link>
               <Link to="/hierarquia" className="home-kpi"><Users /><span>Membros ativos</span><strong>{week.activeMembers.toLocaleString('pt-BR')}</strong></Link>
+              <Link to="/historico-vendas" className="home-kpi"><ShoppingCart /><span>Média semanal de vendas</span><strong>{salesAverages.count.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}</strong></Link>
+              <Link to="/relatorios" className="home-kpi"><TrendingUp /><span>Valor médio semanal</span><strong>{money(salesAverages.value)}</strong></Link>
+              <Link to="/relatorios" className="home-kpi"><Wallet /><span>Ticket médio por venda</span><strong>{money(salesAverages.ticket)}</strong></Link>
             </div>
           )}
         </>

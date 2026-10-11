@@ -7,6 +7,7 @@ import { sendDiscordEvent } from '../services/discordService'
 import { money } from '../utils/formatters'
 import { useToast } from '../components/toasts/ToastProvider'
 import LoadingButton from '../components/ui/LoadingButton'
+import { uploadImage } from '../services/imageUploadService'
 
 const isCard = (product) => (product.category || '').toLowerCase().includes('cart')
 
@@ -76,6 +77,7 @@ export default function RegisterSale() {
   const [submitting, setSubmitting] = useState(false)
   const [partnerships, setPartnerships] = useState([])
   const [partnershipId, setPartnershipId] = useState('')
+  const [receipt, setReceipt] = useState(null)
 
   useEffect(() => {
     Promise.all([
@@ -142,12 +144,25 @@ export default function RegisterSale() {
     setQuantities(current => ({ ...current, [id]: quantity }))
   }
 
+  function readReceipt(file) {
+    if (!file) return
+    if (!file.type.startsWith('image/')) return notify('O comprovante deve ser uma imagem.', 'error')
+    if (file.size > 3 * 1024 * 1024) return notify('O comprovante deve ter no máximo 3 MB.', 'error')
+    const reader = new FileReader()
+    reader.onload = () => setReceipt({ name: file.name, dataUrl: reader.result })
+    reader.onerror = () => notify('Não foi possível ler o comprovante.', 'error')
+    reader.readAsDataURL(file)
+  }
+
   async function finalize() {
     if (submitting) return
     if (!items.length) return notify('Adicione pelo menos um item.', 'error')
     if (saleType === 'PARCERIA' && !selectedPartnership) return notify('Selecione a organização parceira.', 'error')
 
-    const sale = {
+    setSubmitting(true)
+    try {
+      const uploaded = receipt?.dataUrl ? await uploadImage(receipt, 'dominus/sales') : null
+      const sale = {
       sellerUid: profile.uid,
       sellerName: profile.name,
       sellerId: profile.id,
@@ -161,13 +176,13 @@ export default function RegisterSale() {
       factionFeeThreshold,
       factionFee,
       total,
+      imageUrl: uploaded?.url || '',
+      imagePublicId: uploaded?.publicId || '',
     }
-
-    setSubmitting(true)
-    try {
       const ref = await addRecord('sales', sale)
       await sendDiscordEvent('sale', { ...sale, saleId: ref.id })
       setQuantities({})
+      setReceipt(null)
       if (saleType === 'PARCERIA') setPartnershipId('')
       notify('Venda finalizada e enviada ao Discord.')
     } catch (error) {
@@ -263,6 +278,11 @@ export default function RegisterSale() {
             <strong>{money(factionFee)}</strong>
           </div>
           <div className="summary-row total"><span>Valor a ser cobrado</span><strong>{money(total)}</strong></div>
+          <label className="sale-receipt-input">
+            <span>Comprovante da venda (imagem opcional, até 3 MB)</span>
+            <input type="file" accept="image/*" onChange={event => readReceipt(event.target.files?.[0])} />
+          </label>
+          {receipt && <div className="sale-receipt-preview"><img src={receipt.dataUrl} alt="Prévia do comprovante" /><span>{receipt.name}</span><button type="button" className="btn ghost small" onClick={() => setReceipt(null)}>Remover</button></div>}
           <LoadingButton className="btn primary full" onClick={finalize} loading={submitting} loadingText="Finalizando...">Finalizar venda</LoadingButton>
         </aside>
       </div>
