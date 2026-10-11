@@ -13,6 +13,7 @@ export default function FarmHistory() {
   const [page, setPage] = useState(1)
   const [selectedReceipt, setSelectedReceipt] = useState(null)
   const perPage = 8
+  const totalPages = Math.max(1, Math.ceil(farms.length / perPage))
   const load = async () => setFarms(await getOrderedCollection('farms'))
 
   useEffect(() => { load() }, [])
@@ -25,7 +26,6 @@ export default function FarmHistory() {
   useEffect(() => {
     if (page > totalPages) setPage(totalPages)
   }, [page, totalPages])
-  const totalPages = Math.max(1, Math.ceil(farms.length / perPage))
   const current = useMemo(() => farms.slice((page - 1) * perPage, page * perPage), [farms, page])
 
   return (
