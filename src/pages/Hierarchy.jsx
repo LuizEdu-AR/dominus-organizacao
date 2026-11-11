@@ -113,7 +113,7 @@ export default function Hierarchy() {
 
   async function saveEdit() {
     if (!editing || busyAction) return
-    if (newPassword && newPassword.length < 8) return notify('A senha deve possuir no mínimo 8 caracteres.', 'error')
+    if (newPassword && newPassword.length < 6) return notify('A senha deve possuir no mínimo 6 caracteres.', 'error')
     if (newPassword !== confirmPassword) return notify('As senhas não coincidem.', 'error')
     setBusyAction(`edit:${editing.uid}`)
     try {

@@ -8,8 +8,8 @@ function authorized(req) {
 }
 
 async function findUserByDiscordId(discordId) {
-  const snapshot = await adminDb.collection('users').where('discordId', '==', String(discordId)).limit(1).get()
-  if (snapshot.empty) return null
+  const snapshot = await adminDb.collection('users').where('discordId', '==', String(discordId)).limit(2).get()
+  if (snapshot.size !== 1) return null
   const doc = snapshot.docs[0]
   return { ref: doc.ref, uid: doc.id, ...doc.data() }
 }
@@ -17,48 +17,20 @@ async function findUserByDiscordId(discordId) {
 async function findAndLinkLegacyUser({ discordId, discordUsername = '', gameId = '' }) {
   const linked = await findUserByDiscordId(discordId)
   if (linked) return linked
-
-  // Primeiro tenta recuperar o vínculo criado pelo onboarding.
-  const onboarding = await adminDb.collection('memberOnboarding')
-    .where('discordId', '==', String(discordId))
-    .limit(1)
-    .get()
-
-  if (!onboarding.empty) {
+  // Recupera somente vínculo pré-existente comprovado pelo convite original.
+  const onboarding = await adminDb.collection('memberOnboarding').where('discordId', '==', String(discordId)).limit(2).get()
+  if (onboarding.size === 1) {
     const data = onboarding.docs[0].data()
-    const activatedUid = String(data.activatedUid || '').trim()
-    if (activatedUid) {
-      const userDoc = await adminDb.collection('users').doc(activatedUid).get()
-      if (userDoc.exists) {
-        await userDoc.ref.update({
-          discordId: String(discordId),
-          discordUsername: String(discordUsername || data.discordUsername || ''),
-          discordVerified: true,
-          discordLinkedAt: new Date(),
-          discordLinkedFrom: 'sync-recovery',
-        })
-        return { ref: userDoc.ref, uid: userDoc.id, ...userDoc.data(), discordId: String(discordId) }
+    if (data.activatedUid) {
+      const doc = await adminDb.collection('users').doc(data.activatedUid).get()
+      if (doc.exists && doc.data().status === 'active' && (!doc.data().discordId || String(doc.data().discordId) === String(discordId))) {
+        await doc.ref.update({ discordId: String(discordId), discordUsername: String(discordUsername || ''), discordVerified: true, discordLinkedAt: new Date(), discordLinkedFrom: 'onboarding-recovery' })
+        return { ref: doc.ref, uid: doc.id, ...doc.data(), discordId: String(discordId) }
       }
     }
   }
-
-  // Compatibilidade com membros antigos: usa o ID do jogo presente no apelido do Discord.
-  const normalizedGameId = String(gameId || '').trim()
-  if (!/^\d+$/.test(normalizedGameId)) return null
-
-  const byGameId = await adminDb.collection('users').where('id', '==', normalizedGameId).limit(2).get()
-  if (byGameId.size !== 1) return null
-
-  const doc = byGameId.docs[0]
-  await doc.ref.update({
-    discordId: String(discordId),
-    discordUsername: String(discordUsername || ''),
-    discordVerified: true,
-    discordLinkedAt: new Date(),
-    discordLinkedFrom: 'legacy-game-id',
-  })
-
-  return { ref: doc.ref, uid: doc.id, ...doc.data(), discordId: String(discordId) }
+  // Não associar automaticamente pelo apelido: um ID incorreto pode desligar outra conta.
+  return null
 }
 
 export default async function handler(req, res) {
@@ -73,7 +45,7 @@ export default async function handler(req, res) {
       if (!discordId || !VALID_ROLES.includes(role)) return res.status(400).json({ error: 'Dados inválidos.' })
 
       const target = await findAndLinkLegacyUser({ discordId, discordUsername, gameId })
-      if (!target) return res.status(404).json({ error: 'Conta vinculada ao Discord não encontrada. Verifique se o apelido do membro começa com o ID do jogo, por exemplo: 194 | Nome.' })
+      if (!target) return res.status(404).json({ error: 'Conta sem vínculo confirmado com o Discord. Utilize /vincular-membro antes de continuar.' })
       if (target.status !== 'active') return res.status(409).json({ error: 'A conta do membro não está ativa.' })
 
       if (target.role !== role) {
@@ -90,15 +62,27 @@ export default async function handler(req, res) {
     }
 
     if (action === 'dismiss-from-discord') {
-      const { discordId, discordUsername = '', gameId = '', actorDiscordId = '', actorUsername = '', actorGameId = '', reason = '' } = req.body || {}
+      const { discordId, discordUsername = '', gameId = '', explicitGameIdConfirmed = false, actorDiscordId = '', actorUsername = '', actorGameId = '', reason = '' } = req.body || {}
       if (!discordId) return res.status(400).json({ error: 'Discord ID obrigatório.' })
 
       const dismissalReason = String(reason || '').trim()
       if (!dismissalReason) return res.status(400).json({ error: 'Informe o motivo do desligamento.' })
       if (dismissalReason.length > 1000) return res.status(400).json({ error: 'O motivo deve possuir no máximo 1000 caracteres.' })
 
-      const target = await findAndLinkLegacyUser({ discordId, discordUsername, gameId })
-      if (!target) return res.status(404).json({ error: 'Conta vinculada ao Discord não encontrada. Verifique se o apelido do membro começa com o ID do jogo, por exemplo: 194 | Nome.' })
+      let target = await findAndLinkLegacyUser({ discordId, discordUsername, gameId })
+      if (!target && explicitGameIdConfirmed && /^\d{1,20}$/.test(String(gameId))) {
+        const candidates = await adminDb.collection('users').where('id', '==', String(gameId)).limit(2).get()
+        if (candidates.size === 1) {
+          const doc = candidates.docs[0]
+          const data = doc.data()
+          if (data.discordId && String(data.discordId) !== String(discordId)) {
+            return res.status(409).json({ error: 'Este ID está vinculado a outro Discord. Corrija o vínculo antes do desligamento.' })
+          }
+          target = { ref: doc.ref, uid: doc.id, ...data }
+        }
+      }
+      if (!target) return res.status(404).json({ error: 'Cadastro não encontrado ou ID ambíguo. Confirme o ID do jogo ou use /vincular-membro.' })
+      if (String(target.id) !== String(gameId)) return res.status(409).json({ error: 'O ID informado não corresponde ao cadastro vinculado ao Discord. Operação cancelada.' })
       if (target.status === 'dismissed') return res.status(200).json({ ok: true, changed: false, memberName: target.name || '', memberGameId: target.id || '' })
 
       const dismissedAt = new Date()

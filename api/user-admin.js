@@ -1,4 +1,5 @@
 import { adminAuth, adminDb, requireUser } from './_firebaseAdmin.js'
+import { hashPassword } from './_memberCredentials.js'
 
 const legacyManagerRoles = [
   'manager_general',
@@ -103,12 +104,22 @@ export default async function handler(req, res) {
       if (caller.role !== 'leader') return res.status(403).json({ error: 'Apenas líderes podem editar usuários.' })
       if (uid === caller.uid) return res.status(400).json({ error: 'Use Meu perfil para alterar os seus próprios dados.' })
       if (!validRoles.includes(role)) return res.status(400).json({ error: 'Cargo inválido.' })
-      if (password && password.length < 8) return res.status(400).json({ error: 'A senha deve possuir no mínimo 8 caracteres.' })
+      if (password && password.length < 6) return res.status(400).json({ error: 'A senha deve possuir no mínimo 6 caracteres.' })
       await userRef.update({ role, status: 'active' })
       if (target.role !== role) {
         await enqueueDiscordSync({ type: 'set-role', discordId: target.discordId || '', gameId: target.id || '', role, uid, requestedBy: caller.uid, requestedByName: caller.name || '', requestedByGameId: caller.id || '' })
       }
-      if (password) await adminAuth.updateUser(uid, { password })
+      if (password) {
+        const credentialRef = adminDb.collection('memberCredentials').doc(uid)
+        const credential = await credentialRef.get()
+        if (credential.exists) {
+          await credentialRef.update({ passwordHash: hashPassword(password), passwordChangedAt: new Date() })
+          await userRef.update({ mustChangePassword: true })
+          await adminAuth.revokeRefreshTokens(uid)
+        } else {
+          await adminAuth.updateUser(uid, { password })
+        }
+      }
       const changes = []
       if (target.role !== role) changes.push(`**Cargo:** ${roleLabels[target.role] || target.role} → ${roleLabels[role] || role}`)
       if (password) changes.push('**Senha:** redefinida pelo Líder (valor não registrado)')

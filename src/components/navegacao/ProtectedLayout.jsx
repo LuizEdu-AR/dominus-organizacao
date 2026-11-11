@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { updateOwnPassword } from '../../services/authService'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   BarChart3, Bell, Boxes, ChevronRight, CircleDollarSign, ClipboardList, Crown, Handshake,
@@ -57,6 +58,19 @@ export default function ProtectedLayout() {
   const location = useLocation()
   const approved = isApproved(profile)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const [savingPassword, setSavingPassword] = useState(false)
+  async function changeInitialPassword(event) {
+    event.preventDefault()
+    if (newPassword.length < 6) return setPasswordError('A senha deve ter pelo menos 6 caracteres.')
+    if (newPassword !== confirmPassword) return setPasswordError('As senhas não coincidem.')
+    setSavingPassword(true); setPasswordError('')
+    try { await updateOwnPassword(newPassword, true); setNewPassword(''); setConfirmPassword('') }
+    catch (error) { setPasswordError(error.message || 'Não foi possível alterar a senha.') }
+    finally { setSavingPassword(false) }
+  }
 
   useEffect(() => { setSidebarOpen(false) }, [location.pathname])
 
@@ -79,6 +93,22 @@ export default function ProtectedLayout() {
   const visibleGroups = approved
     ? groups.map(group => ({ ...group, links: group.links.filter(([, , , managementOnly]) => !managementOnly || isManagement(profile?.role)) })).filter(group => group.links.length)
     : groups.map(group => ({ ...group, links: group.links.filter(([path]) => path === '/perfil') })).filter(group => group.links.length)
+
+  if (profile?.mustChangePassword) return (
+    <div className="auth-screen">
+      <div className="auth-card" role="dialog" aria-modal="true" aria-labelledby="initial-password-title">
+        <h1 id="initial-password-title">Atualizar senha</h1>
+        <p>Este é seu primeiro acesso. Defina uma senha pessoal para continuar.</p>
+        <form className="form-stack" onSubmit={changeInitialPassword}>
+          <label>Nova senha<input type="password" autoComplete="new-password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required minLength={6} /></label>
+          <label>Confirmar senha<input type="password" autoComplete="new-password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required minLength={6} /></label>
+          {passwordError && <p role="alert">{passwordError}</p>}
+          <button className="btn primary full" disabled={savingPassword}>{savingPassword ? 'Salvando...' : 'Salvar nova senha'}</button>
+        </form>
+        <button className="btn ghost" type="button" onClick={handleLogout}>Sair da conta</button>
+      </div>
+    </div>
+  )
 
   return (
     <div className={`app-shell ${sidebarOpen ? 'sidebar-is-open' : ''}`}>

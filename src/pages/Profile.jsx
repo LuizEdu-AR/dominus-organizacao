@@ -24,9 +24,9 @@ export default function Profile() {
 
   async function savePassword() {
     if (savingPassword) return
-    if (password.length < 8) return notify('A senha deve possuir no mínimo 8 caracteres.', 'error')
+    if (password.length < 6) return notify('A senha deve possuir no mínimo 6 caracteres.', 'error')
     setSavingPassword(true)
-    try { await updateOwnPassword(password); setPassword(''); notify('Senha atualizada.') }
+    try { await updateOwnPassword(password, Boolean(profile?.credentialVersion)); setPassword(''); notify('Senha atualizada.') }
     catch { notify('Faça login novamente antes de alterar a senha, se necessário.', 'error') }
     finally { setSavingPassword(false) }
   }

@@ -29,6 +29,14 @@ service cloud.firestore {
       return leader() || manager();
     }
 
+    match /memberCredentials/{uid} {
+      allow read, write: if false;
+    }
+
+    match /loginRateLimits/{id} {
+      allow read, write: if false;
+    }
+
     match /users/{uid} {
       allow create: if signedIn()
         && request.auth.uid == uid
