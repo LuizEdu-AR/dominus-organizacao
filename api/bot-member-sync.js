@@ -62,28 +62,21 @@ export default async function handler(req, res) {
     }
 
     if (action === 'dismiss-from-discord') {
-      const { discordId, discordUsername = '', gameId = '', explicitGameIdConfirmed = false, actorDiscordId = '', actorUsername = '', actorGameId = '', reason = '' } = req.body || {}
-      if (!discordId) return res.status(400).json({ error: 'Discord ID obrigatório.' })
+      const { discordId, discordUsername = '', actorDiscordId = '', actorUsername = '', actorGameId = '', reason = '' } = req.body || {}
+      if (!/^\d{15,22}$/.test(String(discordId || ''))) return res.status(400).json({ error: 'Discord ID inválido.' })
 
       const dismissalReason = String(reason || '').trim()
       if (!dismissalReason) return res.status(400).json({ error: 'Informe o motivo do desligamento.' })
       if (dismissalReason.length > 1000) return res.status(400).json({ error: 'O motivo deve possuir no máximo 1000 caracteres.' })
 
-      let target = await findAndLinkLegacyUser({ discordId, discordUsername, gameId })
-      if (!target && explicitGameIdConfirmed && /^\d{1,20}$/.test(String(gameId))) {
-        const candidates = await adminDb.collection('users').where('id', '==', String(gameId)).limit(2).get()
-        if (candidates.size === 1) {
-          const doc = candidates.docs[0]
-          const data = doc.data()
-          if (data.discordId && String(data.discordId) !== String(discordId)) {
-            return res.status(409).json({ error: 'Este ID está vinculado a outro Discord. Corrija o vínculo antes do desligamento.' })
-          }
-          target = { ref: doc.ref, uid: doc.id, ...data }
-        }
-      }
-      if (!target) return res.status(404).json({ error: 'Cadastro não encontrado ou ID ambíguo. Confirme o ID do jogo ou use /vincular-membro.' })
-      if (String(target.id) !== String(gameId)) return res.status(409).json({ error: 'O ID informado não corresponde ao cadastro vinculado ao Discord. Operação cancelada.' })
-      if (target.status === 'dismissed') return res.status(200).json({ ok: true, changed: false, memberName: target.name || '', memberGameId: target.id || '' })
+      // Não usar ID do jogo nem apelido como fallback: poderiam atingir outra conta.
+      // Um Discord sem cadastro não impede a remoção dos cargos no servidor.
+      const matches = await adminDb.collection('users').where('discordId', '==', String(discordId)).limit(3).get()
+      if (matches.empty) return res.status(200).json({ ok: true, matched: false, changed: false })
+      if (matches.size !== 1) return res.status(409).json({ error: 'Vínculo duplicado com o Discord. Corrija os cadastros no site.' })
+      const doc = matches.docs[0]
+      const target = { ref: doc.ref, uid: doc.id, ...doc.data() }
+      if (target.status === 'dismissed') return res.status(200).json({ ok: true, matched: true, changed: false, memberName: target.name || '', memberGameId: target.id || '' })
 
       const dismissedAt = new Date()
       await adminAuth.updateUser(target.uid, { disabled: true })
@@ -98,7 +91,7 @@ export default async function handler(req, res) {
         dismissedById: String(actorGameId || ''),
       })
 
-      return res.status(200).json({ ok: true, changed: true, uid: target.uid, memberName: target.name || '', memberGameId: target.id || '', dismissedAt: dismissedAt.toISOString() })
+      return res.status(200).json({ ok: true, matched: true, changed: true, uid: target.uid, memberName: target.name || '', memberGameId: target.id || '', dismissedAt: dismissedAt.toISOString() })
     }
 
     if (action === 'next-jobs') {
