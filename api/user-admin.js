@@ -52,7 +52,7 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: 'Sem permissão.' })
     }
 
-    const { action, uid, role, password, reason = '' } = req.body || {}
+    const { action, uid, role, password, reason = '', name, gameId, darkChat } = req.body || {}
 
     if (action === 'migrate-manager-roles') {
       if (caller.role !== 'leader') return res.status(403).json({ error: 'Apenas líderes podem executar a migração.' })
@@ -105,7 +105,13 @@ export default async function handler(req, res) {
       if (uid === caller.uid) return res.status(400).json({ error: 'Use Meu perfil para alterar os seus próprios dados.' })
       if (!validRoles.includes(role)) return res.status(400).json({ error: 'Cargo inválido.' })
       if (password && password.length < 6) return res.status(400).json({ error: 'A senha deve possuir no mínimo 6 caracteres.' })
-      await userRef.update({ role, status: 'active' })
+      const cleanName = String(name ?? target.name ?? '').trim()
+      const cleanId = String(gameId ?? target.id ?? '').trim()
+      const cleanNick = String(darkChat ?? target.darkChat ?? '').trim()
+      if (!cleanName || cleanName.length > 80 || !/^\d{1,20}$/.test(cleanId) || cleanNick.length > 100) return res.status(400).json({ error: 'Nome, ID ou nick inválido.' })
+      const duplicate = await adminDb.collection('users').where('id', '==', cleanId).limit(3).get()
+      if (duplicate.docs.some(doc => doc.id !== uid && doc.data().status === 'active')) return res.status(409).json({ error: 'ID do jogo já utilizado por outro integrante ativo.' })
+      await userRef.update({ role, status: 'active', name: cleanName, id: cleanId, darkChat: cleanNick })
       if (target.role !== role) {
         await enqueueDiscordSync({ type: 'set-role', discordId: target.discordId || '', gameId: target.id || '', role, uid, requestedBy: caller.uid, requestedByName: caller.name || '', requestedByGameId: caller.id || '' })
       }

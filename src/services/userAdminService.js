@@ -20,6 +20,6 @@ export const approveUser = (uid) => adminRequest('approve', { uid })
 export const changeUserRole = (uid, role) => adminRequest('change-role', { uid, role })
 export const dismissUser = (uid, reason) => adminRequest('dismiss', { uid, reason })
 
-export const updateUserByLeader = (uid, role, password) => adminRequest('leader-edit', { uid, role, password })
+export const updateUserByLeader = (uid, role, password, details = {}) => adminRequest('leader-edit', { uid, role, password, ...details })
 
 export const migrateLegacyManagerRoles = () => adminRequest('migrate-manager-roles', {})

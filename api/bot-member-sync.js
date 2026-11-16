@@ -40,6 +40,26 @@ export default async function handler(req, res) {
   try {
     const { action } = req.body || {}
 
+    if (action === 'get-member-for-edit' || action === 'edit-member-from-discord') {
+      const { discordId, name, gameId, darkChat = '', actorLevel = '' } = req.body || {}
+      if (!/^\d{15,22}$/.test(String(discordId || ''))) return res.status(400).json({ error: 'Discord ID inválido.' })
+      const matches = await adminDb.collection('users').where('discordId', '==', String(discordId)).limit(3).get()
+      if (matches.size !== 1) return res.status(409).json({ error: 'Cadastro não vinculado ou vínculo duplicado. Use /vincular-membro.' })
+      const doc = matches.docs[0]
+      const target = doc.data()
+      if (target.status !== 'active') return res.status(409).json({ error: 'Cadastro inativo.' })
+      if (action === 'get-member-for-edit') return res.status(200).json({ ok: true, name: target.name || '', id: String(target.id || ''), darkChat: target.darkChat || '', role: target.role })
+      if (!['leader', 'manager'].includes(actorLevel) || (actorLevel === 'manager' && target.role !== 'member')) return res.status(403).json({ error: 'Sem permissão para editar este cargo.' })
+      const cleanName = String(name || '').trim()
+      const cleanId = String(gameId || '').trim()
+      const cleanNick = String(darkChat || '').trim()
+      if (!cleanName || cleanName.length > 80 || !/^\d{1,20}$/.test(cleanId) || cleanNick.length > 100) return res.status(400).json({ error: 'Dados inválidos.' })
+      const duplicate = await adminDb.collection('users').where('id', '==', cleanId).limit(3).get()
+      if (duplicate.docs.some(item => item.id !== doc.id && item.data().status === 'active')) return res.status(409).json({ error: 'ID do jogo já utilizado por outro integrante ativo.' })
+      await doc.ref.update({ name: cleanName, id: cleanId, darkChat: cleanNick, editedFrom: 'discord', editedAt: new Date() })
+      return res.status(200).json({ ok: true })
+    }
+
     if (action === 'set-role-from-discord') {
       const { discordId, discordUsername = '', gameId = '', role, actorDiscordId = '', actorUsername = '' } = req.body || {}
       if (!discordId || !VALID_ROLES.includes(role)) return res.status(400).json({ error: 'Dados inválidos.' })

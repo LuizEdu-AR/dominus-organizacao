@@ -42,6 +42,9 @@ export default function Hierarchy() {
   const [dismissalReason, setDismissalReason] = useState('')
   const [editing, setEditing] = useState(null)
   const [editRole, setEditRole] = useState('member')
+  const [editName, setEditName] = useState('')
+  const [editGameId, setEditGameId] = useState('')
+  const [editDarkChat, setEditDarkChat] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [busyAction, setBusyAction] = useState(null)
@@ -100,6 +103,9 @@ export default function Hierarchy() {
   function openEdit(user) {
     setEditing(user)
     setEditRole(user.role === 'pending' ? 'member' : user.role)
+    setEditName(user.name || '')
+    setEditGameId(String(user.id || ''))
+    setEditDarkChat(user.darkChat || '')
     setNewPassword('')
     setConfirmPassword('')
   }
@@ -118,9 +124,9 @@ export default function Hierarchy() {
     setBusyAction(`edit:${editing.uid}`)
     try {
       const roleChanged = editing.role !== editRole
-      await updateUserByLeader(editing.uid, editRole, newPassword)
+      await updateUserByLeader(editing.uid, editRole, newPassword, { name: editName.trim(), gameId: editGameId.trim(), darkChat: editDarkChat.trim() })
       if (roleChanged) await createNotification({ title: 'Cargo atualizado', message: `Seu novo cargo é ${ROLE_LABELS[editRole] || editRole}.`, type: 'role', link: '/perfil', audience: 'individual', targetUid: editing.uid, authorUid: profile.uid })
-      notify(newPassword ? 'Cargo e senha atualizados.' : 'Cargo atualizado.')
+      notify('Dados do integrante atualizados.')
       setEditing(null); setNewPassword(''); setConfirmPassword(''); await load()
     } catch (e) { notify(e.message, 'error') }
     finally { setBusyAction(null) }
@@ -220,6 +226,9 @@ export default function Hierarchy() {
             <h3>Editar usuário</h3>
             <p className="muted">{editing.name} · ID {editing.id}</p>
             <div className="hierarchy-edit-fields">
+              <label>Nome<input value={editName} onChange={event => setEditName(event.target.value)} maxLength={80} disabled={Boolean(busyAction)} /></label>
+              <label>ID do jogo<input value={editGameId} onChange={event => setEditGameId(event.target.value)} maxLength={20} disabled={Boolean(busyAction)} /></label>
+              <label>Nick no Dark Chat<input value={editDarkChat} onChange={event => setEditDarkChat(event.target.value)} maxLength={100} disabled={Boolean(busyAction)} /></label>
               <label>Cargo<select value={editRole} onChange={event => setEditRole(event.target.value)} disabled={Boolean(busyAction)}>{roleOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
               <div className="hierarchy-password-block"><strong>Redefinir senha</strong><span className="muted">Deixe os campos vazios para manter a senha atual.</span></div>
               <label>Nova senha<input type="password" value={newPassword} onChange={event => setNewPassword(event.target.value)} autoComplete="new-password" disabled={Boolean(busyAction)} /></label>
