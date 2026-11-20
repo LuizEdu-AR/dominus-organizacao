@@ -145,48 +145,14 @@ export default async function handler(req, res) {
         embed.image = { url: payload.imageUrl }
       }
 
-      // O servidor Dominus mantém a embed; o webhook secundário recebe texto comum.
+      // Registros de ações são enviados somente ao Discord Dominus.
       const primaryWebhook = process.env.DISCORD_ACTIONS_WEBHOOK
-      const secondaryWebhook = process.env.DISCORD_ACTIONS_WEBHOOK_SECONDARY
-      if (!primaryWebhook && !secondaryWebhook) throw new Error('Webhook de ações não configurado.')
-
-      const identity = { username: 'Dominus • Registro de Ação', avatar_url: icon }
-      const textValue = value => String(value ?? '').trim() || '-'
-      const plainLines = [
-        `Ação: ${textValue(payload.action)}`,
-        `Data: ${textValue(payload.date)}`,
-        `Hora: ${textValue(payload.time)}`,
-        `Resultado: ${textValue(payload.result)}`,
-        `Resumo: ${textValue(payload.summary || 'Opcional')}`,
-        `Motivo: ${textValue(payload.reason || 'Ação')}`,
-        `Participantes: ${textValue(payload.participants)}`,
-        `Registrado por: ${textValue(payload.authorName)} - ID ${textValue(payload.authorId)}`,
-      ]
-      const mediaLink = String(payload.mediaLink || '').trim()
-      const imageUrl = String(payload.imageUrl || '').trim()
-      if (mediaLink || imageUrl) plainLines.push('Foto/Vídeo:')
-      if (mediaLink) plainLines.push(mediaLink)
-      // URLs isoladas permitem que o Discord apresente uma prévia da mídia.
-      if (imageUrl && imageUrl !== mediaLink) plainLines.push(imageUrl)
-      const plainContent = plainLines.join('\n')
-      if (plainContent.length > 2000) {
-        throw new Error('Registro de ação excede o limite de 2.000 caracteres do Discord.')
-      }
-
-      const deliveries = [
-        ...(primaryWebhook ? [send(primaryWebhook, { ...identity, embeds: [embed] })] : []),
-        ...(secondaryWebhook ? [send(secondaryWebhook, {
-          ...identity,
-          content: plainContent,
-          allowed_mentions: { parse: [] },
-        })] : []),
-      ]
-      const deliveryResults = await Promise.allSettled(deliveries)
-      const failed = deliveryResults.filter(result => result.status === 'rejected')
-      if (failed.length) {
-        failed.forEach((result, index) => console.error('Falha no envio de registro de ação:', result.reason))
-        throw new Error('Não foi possível enviar o registro para todos os canais do Discord.')
-      }
+      if (!primaryWebhook) throw new Error('Webhook principal de ações não configurado.')
+      await send(primaryWebhook, {
+        username: 'Dominus • Registro de Ação',
+        avatar_url: icon,
+        embeds: [embed],
+      })
     } else if (type === 'notice') {
       const managementRoles = ['leader', 'manager']
       if (!managementRoles.includes(caller.role)) {
